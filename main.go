@@ -26,9 +26,14 @@ import (
 	"github.com/hooto/htracker/worker"
 )
 
+var (
+	version = ""
+	release = ""
+)
+
 func main() {
 
-	if err := config.Setup(); err != nil {
+	if err := config.Setup(version, release); err != nil {
 		fmt.Println(err)
 		return
 	}

@@ -4,4 +4,6 @@ etc
 deploy
 gorun
 in*
+*.rpm
+*.txz
 

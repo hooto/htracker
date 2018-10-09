@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	Prefix      = "/opt/hooto/htracker"
+	Prefix      = "/opt/hooto/tracker"
 	Version     = "0.1.0"
+	Release     = "1"
 	VersionHash = Version // TODO
 	err         error
 	Config      ConfigCommon
@@ -40,7 +41,23 @@ type ConfigCommon struct {
 	HttpPort   uint16              `json:"http_port"`
 }
 
-func Setup() error {
+func Setup(version, release string) error {
+
+	if version != "" {
+		ver := types.Version(version)
+		if ver.Valid() {
+			Version = ver.String()
+		}
+	}
+
+	if release != "" {
+		rel := types.Version(release)
+		if rel.Valid() {
+			Release = rel.String()
+		}
+	}
+
+	hlog.Printf("info", "version %s, release %s", Version, Release)
 
 	prefix := ""
 
@@ -59,7 +76,7 @@ func Setup() error {
 		Prefix = filepath.Clean(prefix)
 	}
 
-	hlog.Printf("warn", "setup prefix %s", Prefix)
+	hlog.Printf("info", "setup prefix %s", Prefix)
 
 	file := Prefix + "/etc/config.json"
 	if err := json.DecodeFile(file, &Config); err != nil {
@@ -69,7 +86,7 @@ func Setup() error {
 	}
 
 	Config.Data = connect.ConnOptions{
-		Name:      "htracker_data",
+		Name:      "tracker_db",
 		Connector: "iomix/skv/Connector",
 		Driver:    types.NewNameIdentifier("lynkdb/kvgo"),
 	}
@@ -84,7 +101,7 @@ func Setup() error {
 		Config.HttpPort = 9520
 	}
 
-	hlog.Printf("warn", "setup data dir %s", data_dir)
+	hlog.Printf("info", "setup data dir %s", data_dir)
 
 	return Sync()
 }

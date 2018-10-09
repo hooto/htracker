@@ -312,6 +312,50 @@ func tracerActionEntrySync(entry *hapi.TracerProcessEntry) error {
 	return nil
 }
 
+type traceCommandEntry struct {
+	Command   string
+	CleanFile string
+	Done      bool
+}
+
+const (
+	perfCmdRecord = "perf record -F 99 -g -p %d -o %s.data -- sleep %d"
+	perfCmdUnfold = "perf script -f -i %s.data > %s.unfold"
+	perfCmdJson   = "%s/bin/burn convert --output=%s.json %s.unfold"
+	perfCmdSvg    = "%s/deps/FlameGraph/stackcollapse-perf.pl %s.unfold | %s/deps/FlameGraph/flamegraph.pl --title=' ' > %s.svg"
+)
+
+const (
+	perfRecordTime     = 60
+	perfRecordRangeSec = uint32(1200)
+)
+
+func tracerActionDyTraceCommands(pid int32, perfPrefix string) []*traceCommandEntry {
+
+	return []*traceCommandEntry{
+		{
+			fmt.Sprintf(perfCmdRecord, pid, perfPrefix, perfRecordTime),
+			".data",
+			false,
+		},
+		{
+			fmt.Sprintf(perfCmdUnfold, perfPrefix, perfPrefix),
+			".unfold",
+			false,
+		},
+		{
+			fmt.Sprintf(perfCmdJson, config.Prefix, perfPrefix, perfPrefix),
+			".json",
+			false,
+		},
+		{
+			fmt.Sprintf(perfCmdSvg, config.Prefix, perfPrefix, config.Prefix, perfPrefix),
+			".svg",
+			false,
+		},
+	}
+}
+
 func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 
 	if procTraceNum > 20 {
@@ -321,7 +365,7 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 	tn := uint32(time.Now().Unix())
 
 	if entry.Tracing != nil ||
-		(tn-entry.Traced) < 1800 {
+		(tn-entry.Traced) < perfRecordRangeSec {
 		return nil
 	}
 
@@ -334,65 +378,55 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 	go func(entry *hapi.TracerProcessEntry) {
 
 		var (
-			perf_id = fmt.Sprintf("perf.%d.%d.%d",
+			perfId = fmt.Sprintf("perf.%d.%d.%d",
 				entry.Tracing.Created, entry.Created, entry.Pid)
-			perf_tmp   = fmt.Sprintf("%s/var/tmp/%s", config.Prefix, perf_id)
-			perf_oncpu = fmt.Sprintf("%s/var/tmp/%s.svg", config.Prefix, perf_id)
-			perf_json  = fmt.Sprintf("%s/var/tmp/%s.json", config.Prefix, perf_id)
+			perfPrefix = fmt.Sprintf("%s/var/tmp/%s", config.Prefix, perfId)
 			out        []byte
 			err        error
-			time_in    = 30
 		)
 
-		cmds := []string{
-			fmt.Sprintf("perf record -F 99 -g -p %d -o %s.data -- sleep %d",
-				entry.Pid, perf_tmp, time_in),
-			fmt.Sprintf("perf script -f -i %s.data > %s.unfold",
-				perf_tmp, perf_tmp),
-			fmt.Sprintf("%s/bin/burn convert --output=%s %s.unfold",
-				config.Prefix, perf_json, perf_tmp),
-			fmt.Sprintf("%s/deps/FlameGraph/stackcollapse-perf.pl %s.unfold | %s/deps/FlameGraph/flamegraph.pl --title=' ' > %s",
-				config.Prefix, perf_tmp,
-				config.Prefix, perf_oncpu,
-			),
-		}
+		cmds := tracerActionDyTraceCommands(entry.Pid, perfPrefix)
 
 		for _, cmd := range cmds {
-			out, err = exec.Command("/bin/sh", "-c", cmd).Output()
+			out, err = exec.Command("/bin/sh", "-c", cmd.Command).Output()
+			cmd.Done = true
 			if err != nil {
-				hlog.Printf("error", "failed to trace %s, err %s, out %s,cmd %s",
-					perf_id, err.Error(), string(out), cmd)
+				hlog.Printf("error", "failed to trace %s, err %s, out %s, cmd %s",
+					perfId, err.Error(), string(out), cmd.Command)
 				break
 			}
-			hlog.Printf("debug", "OK %s", cmd)
+			hlog.Printf("debug", "OK %s", cmd.Command)
 		}
 
 		if err == nil {
 
-			if fst, err := os.Stat(perf_tmp + ".data"); err == nil {
+			if fst, err := os.Stat(perfPrefix + ".data"); err == nil {
 				entry.Tracing.PerfSize = uint32(fst.Size())
 			}
 
 			var gitem hapi.FlameGraphBurnProfile
-			if err = json.DecodeFile(perf_json, &gitem); err == nil {
-
+			if err = json.DecodeFile(perfPrefix+".json", &gitem); err == nil {
 				entry.Tracing.GraphBurn = &gitem
+			}
 
-				gfp, err := os.Open(perf_oncpu)
-				if err == nil {
+			if err == nil {
+
+				if gfp, err := os.Open(perfPrefix + ".svg"); err == nil {
 
 					fsts, _ := gfp.Stat()
 					if fsts.Size() > 100 && fsts.Size() < 8*hapi.MB {
 						if bs, err := ioutil.ReadAll(gfp); err == nil {
 							entry.Tracing.GraphOnCPU = string(bs)
-							// os.Remove(perf_oncpu)
 						}
 					} else {
-						hlog.Printf("error", "svg size %d, %s", fsts.Size(), perf_oncpu)
+						hlog.Printf("error", "svg size %d, %s", fsts.Size(), perfPrefix+".svg")
 					}
 
 					gfp.Close()
 				}
+			}
+
+			if entry.Tracing.GraphBurn != nil && entry.Tracing.GraphOnCPU != "" {
 
 				entry.Tracing.Tid = entry.Tid
 				entry.Tracing.Pid = entry.Pid
@@ -414,11 +448,14 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 					},
 				)
 
-				hlog.Printf("info", "trace %s in %d s", perf_id,
+				entry.Traced = uint32(time.Now().Unix())
+
+				hlog.Printf("info", "trace %s in %d s", perfId,
 					entry.Tracing.Updated-entry.Tracing.Created,
 				)
 
-				entry.Traced = uint32(time.Now().Unix())
+			} else {
+				hlog.Printf("error", "ERR trace %s", perfId)
 			}
 		}
 
@@ -428,10 +465,11 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 
 		procTraceNum -= 1
 
-		os.Remove(perf_tmp + ".data")
-		os.Remove(perf_tmp + ".unfold")
-		os.Remove(perf_tmp + ".json")
-		os.Remove(perf_tmp + ".svg")
+		for _, cmd := range cmds {
+			if cmd.Done && cmd.CleanFile != "" {
+				os.Remove(perfPrefix + cmd.CleanFile)
+			}
+		}
 
 	}(entry)
 
