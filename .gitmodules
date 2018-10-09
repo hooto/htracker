@@ -1,0 +1,9 @@
+[submodule "deps/FlameGraph"]
+	path = deps/FlameGraph
+	url = https://github.com/brendangregg/FlameGraph.git
+[submodule "webui/lessui"]
+	path = webui/lessui
+	url = https://github.com/lessos/lessui.git
+[submodule "webui/hchart"]
+	path = webui/hchart
+	url = https://github.com/hooto/hchart.git

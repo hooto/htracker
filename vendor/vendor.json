@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "vN+0LxZzFLETVJSP0xTZwwucVRE=",
+			"path": "github.com/spiermar/burn",
+			"revision": "972def02d56e2afd88a794181412bd4ad488ac49",
+			"revisionTime": "2017-08-11T21:39:49Z"
+		}
+	],
+	"rootPath": "github.com/hooto/htracker"
+}
