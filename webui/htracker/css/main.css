@@ -1,0 +1,240 @@
+body {
+	font-size: 12pt;
+}
+
+.htracker-table td {
+    padding: 6px 10px;
+	font-size: 1.1em;
+}
+
+.htracker-table td:first-child {
+    padding-left: 0;
+}
+
+.htracker-table td:last-child {
+    padding-right: 0;
+}
+
+.htracker-table p {
+   line-height: 200%;
+}
+
+.htracker-table-item-name {
+	font-weight: 600;
+}
+
+.htracker-modal-container {
+	padding: 5px 0;
+}
+
+.htracker-modal-container .row {
+	margin: 0;
+}
+.htracker-modal-container .col-form-label {
+	padding-left: 0;
+}
+.htracker-modal-container div:last-child {
+	padding-right: 0;
+}
+
+#htracker-nav > li {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+#htracker-nav > li > a {
+  font-size: 1.2em;
+}
+
+.htracker-nav-right {
+  float: right !important;
+  margin-right: 2px;
+}
+
+#htracker-module-navbar {
+  clear: both;
+  height: 30px;
+  margin: 10px 0;
+  display: block;
+}
+
+#htracker-module-navbar form {
+  margin-bottom: 0 !important;
+}
+
+.hide {
+  display: none;
+}
+
+#body-content {
+  background-color: #f5f5f5;
+}
+
+#htracker-module-layout>#htracker-module-navbar {
+  padding: 0 10px;
+}
+
+.htracker-module-nav {
+  position: relative;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px 10px;
+  float: left;
+  min-height: 30px !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.htracker-module-nav:first-child {
+  margin-left: 0 !important;
+}
+
+.htracker-module-nav>li {
+  position: relative;
+  padding: 0;
+  margin: 0 10px 0 0;
+  display: inline-block;
+  zoom: 1;
+  vertical-align: middle;
+  line-height: 30px;
+  float: left;
+  border-radius: 2px;
+}
+
+.htracker-module-nav>li:first-child {
+  /* margin-left: 0; */
+}
+
+.htracker-module-nav>li>a {
+  padding: 0 10px;
+  display: block;
+  text-decoration: none;
+  white-space: nowrap;
+  color: #777;
+  font-size: 12px;
+  border-radius: 2px;
+}
+
+.htracker-module-nav>li>a:hover {
+  padding: 0 10px;
+  display: block;
+  text-decoration: none;
+  white-space: nowrap;
+  color: #777;
+  font-size: 12px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.htracker-module-nav>li.active,
+.htracker-module-nav>li>a.active {
+  background-color: #333;
+  color: #fff;
+}
+
+.htracker-module-nav>li.active>a {
+  color: #fff;
+}
+
+.htracker-module-nav>li.active:after,
+.htracker-module-nav>li>a.active:after {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 50%;
+  margin-left: -6px;
+  top: 30px;
+  width: 0;
+  height: 0;
+  border-color: #333 transparent transparent transparent;
+  border-style: solid;
+  border-width: 6px;
+}
+
+.htracker-module-nav>li.hover,
+.htracker-module-nav>li>a.hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #777;
+}
+
+.htracker-module-nav>li.hover_border,
+.htracker-module-nav>li>a.hover_border {
+  border: rgba(0, 0, 0, 0.1) 1px solid;
+}
+
+.htracker-module-nav>li.primary,
+.htracker-module-nav>li>a.primary {
+  background-color: rgb(0, 120, 231);
+  color: #fff;
+}
+
+#htracker-module-navbar-optools button {
+  font-size: 12px;
+  line-height: 100%;
+}
+
+#htracker-module-navbar-optools input {
+  margin: 0;
+  height: 30px;
+  font-size: 12px;
+  line-height: 100%;
+  border-radius: 2px;
+  background-color: #fff;
+  color: #000;
+}
+
+.htracker-div-h-title {
+  padding: 10px 10px 5px 10px;
+  font-size: 1.2em;
+  line-height: 100%;
+}
+
+.htracker-div-container {
+  margin: 0 10px;
+}
+
+.htracker-div-light {
+  clear: both;
+  background-color: #fff;
+  margin: 0 10px;
+  padding: 0;
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.15);
+}
+
+.htracker-div-hover {
+  cursor: pointer;
+}
+
+.table th {
+	border-top: 0px !important;
+}
+
+.table.valign-middle td {
+    vertical-align: middle !important;
+}
+
+.htracker-tracer-proc-stats-item {
+  position: relative;
+  overflow: hidden;
+  padding: 5px 10px;
+  margin: 0 10px 20px 10px;
+  flex: 1 0 400px;
+  text-align: center;
+}
+
+.htracker-tracer-proc-stats-item:empty {
+  padding: 0;
+  margin: 1px 10px;
+  height: 0;
+  border: none;
+}
+
+.htracker-body-footer {
+  margin: 10px 0;
+  text-align: center;
+  color: #343a40;
+  font-size: 1em;
+}
+
+.htracker-body-footer a {
+  color: #343a40;
+  font-size: 1.1em;
+}
