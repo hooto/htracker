@@ -1,3 +1,17 @@
+// Copyright 2018 Eryx <evorui аt gmail dοt com>, All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
@@ -23,6 +37,7 @@ var (
 type ConfigCommon struct {
 	InstanceId string              `json:"instance_id"`
 	Data       connect.ConnOptions `json:"data"`
+	HttpPort   uint16              `json:"http_port"`
 }
 
 func Setup() error {
@@ -65,9 +80,13 @@ func Setup() error {
 		return err
 	}
 
+	if Config.HttpPort < 1 {
+		Config.HttpPort = 9520
+	}
+
 	hlog.Printf("warn", "setup data dir %s", data_dir)
 
-	return nil
+	return Sync()
 }
 
 func Sync() error {

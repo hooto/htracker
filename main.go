@@ -1,12 +1,22 @@
+// Copyright 2018 Eryx <evorui аt gmail dοt com>, All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"time"
 
-	"github.com/hooto/hflag4g/hflag"
 	"github.com/hooto/httpsrv"
 
 	"github.com/hooto/htracker/config"
@@ -14,10 +24,6 @@ import (
 	"github.com/hooto/htracker/websrv/frontend"
 	"github.com/hooto/htracker/websrv/v1"
 	"github.com/hooto/htracker/worker"
-)
-
-var (
-	err error
 )
 
 func main() {
@@ -43,58 +49,9 @@ func main() {
 	hs.ModuleRegister("/htracker", frontend.NewModule())
 	hs.ModuleRegister("/", frontend.NewModule())
 
-	// listening on port 8060
-	hs.Config.HttpPort = 8060
-
 	// start
+	hs.Config.HttpPort = config.Config.HttpPort
 	if err := hs.Start(); err != nil {
 		panic(err)
 	}
-
-	fmt.Println("running")
-	//
-	pid, ok := hflag.Value("pid")
-	if !ok {
-		fmt.Println("--pid not found")
-		return
-	}
-	if pid.Int() < 1 {
-		fmt.Println("--pid not valid")
-		return
-	}
-
-	//
-	time_in := 30
-	if v, ok := hflag.Value("time_in"); ok {
-		time_in = v.Int()
-		if time_in < 30 {
-			time_in = 30
-		} else if time_in > 3600 {
-			time_in = 3600
-		}
-	}
-
-	qid := fmt.Sprintf("%d", time.Now().Unix())
-	os.MkdirAll("var/outputs", 0755)
-	cmds := []string{
-		fmt.Sprintf("perf record -F 99 -g -p %d -o var/tmp/perf.%s.data -- sleep %d",
-			pid.Int(), qid, time_in),
-		fmt.Sprintf("perf script -f -i var/tmp/perf.%s.data &> var/tmp/perf.%s.unfold", qid, qid),
-		fmt.Sprintf("perf script -f | deps/FlameGraph/stackcollapse-perf.pl var/tmp/perf.%s.unfold | deps/FlameGraph/flamegraph.pl > var/outputs/%s.svg",
-			qid, qid,
-		),
-	}
-	for i, cmd := range cmds {
-		out, err := exec.Command("/bin/sh", "-c", cmd).Output()
-		if err != nil {
-			fmt.Println(i, cmd, err, string(out))
-			return
-		}
-		fmt.Println(i, cmd, "DONE")
-	}
-
-	fmt.Println("OK", fmt.Sprintf("/htracker/~/%s.svg",
-		qid))
-
-	select {}
 }
