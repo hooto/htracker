@@ -16,6 +16,7 @@
 var htrackerProcess = {
     listLimit: 30,
     listLastUpdated: 0,
+    listAutoRefreshTimer: null,
     entryActive: null,
 }
 
@@ -30,8 +31,14 @@ htrackerProcess.Index = function() {
 
 htrackerProcess.ListRefresh = function() {
 
+
     var elem = document.getElementById("htracker-process-list");
     if (!elem) {
+        // if (htrackerProcess.listAutoRefreshTimer) {
+        // 	clearInterval(htrackerProcess.listAutoRefreshTimer);
+        // 	htrackerProcess.listAutoRefreshTimer = null;
+        // 	console.log("clearInterval htrackerProcess.listAutoRefreshTimer");
+        // }
         return;
     }
     var url = "limit=" + htrackerProcess.listLimit;
@@ -60,9 +67,13 @@ htrackerProcess.ListRefresh = function() {
                 $("#htracker-process-list-status-msg").text(msg);
             }
 
-            window.setTimeout(function() {
-                htrackerProcess.ListRefresh();
-            }, 60000);
+            if (!htrackerProcess.listAutoRefreshTimer) {
+                // htrackerProcess.listAutoRefreshTimer = window.setInterval(function() {
+                htrackerProcess.listAutoRefreshTimer = window.setTimeout(function() {
+                    htrackerProcess.listAutoRefreshTimer = null;
+                    htrackerProcess.ListRefresh();
+                }, 60000);
+            }
         },
     });
 }

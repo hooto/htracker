@@ -93,12 +93,15 @@ htrackerTracer.ListRefresh = function(list_active) {
         callback: function(err, data) {
 
             if (err) {
+                $("#htracker-tracer-list").empty();
                 return l4i.InnerAlert(alert_id, "error", err);
             }
             if (data.error) {
+                $("#htracker-tracer-list").empty();
                 return l4i.InnerAlert(alert_id, "error", data.error.message);
             }
             if (!data.items || data.items.length < 1) {
+                $("#htracker-tracer-list").empty();
                 return l4i.InnerAlert(alert_id, "warn", "No Project Found");
             }
 
@@ -126,6 +129,7 @@ htrackerTracer.ListRefresh = function(list_active) {
                 tplid: "htracker-tracer-list-tpl",
                 data: data,
             });
+            l4i.InnerAlert(alert_id);
         },
     });
 }
@@ -687,6 +691,8 @@ htrackerTracer.NodeStats = function(time_past) {
 
                     if (fix > 1) {
                         v2.value = (v2.value / fix).toFixed(2);
+                    } else {
+                        v2.value = parseInt(v2.value);
                     }
 
                     dataset.data.push(v2.value);
