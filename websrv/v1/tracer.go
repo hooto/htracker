@@ -38,7 +38,9 @@ func (c Tracer) ListAction() {
 	defer c.RenderJson(&sets)
 
 	var (
-		limit = int(c.Params.Int64("limit"))
+		limit  = int(c.Params.Int64("limit"))
+		closed = c.Params.Get("filter_closed")
+		ptype  = "active"
 	)
 
 	if limit < 10 {
@@ -47,9 +49,13 @@ func (c Tracer) ListAction() {
 		limit = 100
 	}
 
+	if closed == "true" {
+		ptype = "hist"
+	}
+
 	var (
-		offset = hapi.DataPathTracerEntry("Z")
-		cutset = hapi.DataPathTracerEntry("")
+		offset = hapi.DataPathProjEntry(ptype, "Z")
+		cutset = hapi.DataPathProjEntry(ptype, "")
 	)
 
 	rs := data.Data.KvRevScan([]byte(offset), []byte(cutset), limit)

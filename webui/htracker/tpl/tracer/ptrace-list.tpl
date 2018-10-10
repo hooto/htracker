@@ -7,7 +7,8 @@
       <tr>
         <th>Start Time</th>
         <th>End Time</th>
-        <th>Flame Graph</th>
+        <th>Log Size</th>
+        <th style="text-align:right">Flame Graph</th>
       </tr>
       </thead>
       <tbody id="htracker-tracer-ptrace-list"></tbody>
@@ -16,7 +17,9 @@
 
 <script type="text/html" id="htracker-tracer-ptrace-list-menus">
 <li>
-  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcList()">Back to Process List</button>
+  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcList()">
+    <span class="icon16 icono-caretLeftCircle"></span>
+    Back to Hit Process List</button>
 </li>
 </script>
 
@@ -26,7 +29,8 @@
 <tr>
   <td>{[=l4i.UnixTimeFormat(v.created, "Y-m-d H:i:s")]}</td>
   <td>{[=l4i.UnixTimeFormat(v.updated, "Y-m-d H:i:s")]}</td>
-  <td>
+  <td>{[=htracker.UtilResSizeFormat(v.perf_size)]}</td>
+  <td align="right">
     <button class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcDyTraceView({[=v.pid]}, {[=v.pcreated]}, {[=v.created]})">On-CPU</button>
   </td>
 </tr>

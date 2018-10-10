@@ -28,17 +28,39 @@ var htrackerTracer = {
             "datasets": [],
         },
     },
+    listMenus: [{
+        name: "Current Active Projects",
+        uri: "proj/list/active",
+    }, {
+        name: "History Projects",
+        uri: "proj/list/history",
+    }],
+    listMenuActive: null,
 }
 
 htrackerTracer.Index = function() {
+
+    h3tracker.KeyUpEscHook = null;
+
     htracker.Loader("#htracker-module-content", "tracer/list", {
         callback: function() {
-            htrackerTracer.ListRefresh();
+            htracker.ModuleNavbarMenu("projmenus", htrackerTracer.listMenus);
+            l4i.UrlEventRegister("proj/list/active", htrackerTracer.ListRefreshActive, "htracker-module-navbar-menus");
+            l4i.UrlEventRegister("proj/list/history", htrackerTracer.ListRefreshHistory, "htracker-module-navbar-menus");
+            l4i.UrlEventHandler("proj/list/active", true);
         },
     });
 }
 
-htrackerTracer.ListRefresh = function() {
+htrackerTracer.ListRefreshActive = function() {
+    htrackerTracer.ListRefresh("proj/list/active");
+}
+
+htrackerTracer.ListRefreshHistory = function() {
+    htrackerTracer.ListRefresh("proj/list/history");
+}
+
+htrackerTracer.ListRefresh = function(list_active) {
 
     htrackerTracer.entryActiveId = null;
 
@@ -53,7 +75,18 @@ htrackerTracer.ListRefresh = function() {
     }
     var alert_id = "#htracker-tracer-list-alert";
 
-    htracker.ModuleNavbarMenuRefresh("htracker-tracer-list-menus");
+    if (!list_active && htrackerTracer.listMenuActive) {
+        list_active = htrackerTracer.listMenuActive;
+    }
+    if (list_active != "proj/list/history") {
+        list_active = "proj/list/active";
+    } else {
+        url += "&filter_closed=true";
+    }
+    htrackerTracer.listMenuActive = list_active;
+
+    // htracker.ModuleNavbarMenuRefresh("htracker-tracer-list-menus");
+    // h3tracker.ModuleNavbarMenu("projlist", htrackerTracer.ListMenus, list_active);
     htracker.OpToolsRefresh("#htracker-tracer-list-optools");
 
     htracker.ApiCmd("tracer/list?" + url, {
@@ -66,19 +99,26 @@ htrackerTracer.ListRefresh = function() {
                 return l4i.InnerAlert(alert_id, "error", data.error.message);
             }
             if (!data.items || data.items.length < 1) {
-                return l4i.InnerAlert(alert_id, "warn", "No Tracer Found");
+                return l4i.InnerAlert(alert_id, "warn", "No Project Found");
             }
+
             for (var i in data.items) {
                 var filter_title = [];
                 if (data.items[i].filter.proc_id > 0) {
-                    filter_title.push("PID: " + data.items[i].filter.proc_id);
+                    filter_title.push("ProcID: " + data.items[i].filter.proc_id);
                 } else if (data.items[i].filter.proc_name) {
-                    filter_title.push("PNAME: " + data.items[i].filter.proc_name);
+                    filter_title.push("ProcName: " + data.items[i].filter.proc_name);
                 }
                 if (!data.items[i].proc_num) {
                     data.items[i].proc_num = 0;
                 }
+                if (!data.items[i].closed) {
+                    data.items[i].closed = 0;
+                }
                 data.items[i]._filter_title = filter_title.join(", ");
+            }
+            if (list_active == "proj/list/history") {
+                data._history = true;
             }
 
             l4iTemplate.Render({
@@ -112,7 +152,7 @@ htrackerTracer.EntryView = function(id) {
 
             l4iModal.Open({
                 id: "htracker-tracer-new",
-                title: "Tracer Overview",
+                title: "Project Overview",
                 data: data,
                 tplid: "htracker-tracer-entry-tpl",
                 width: 900,
@@ -154,7 +194,7 @@ htrackerTracer.NewEntryProcessId = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Tracer Settings",
+        title: "Project Settings",
         data: {
             filter: options.filter,
         },
@@ -174,7 +214,7 @@ htrackerTracer.NewEntryProcessName = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Tracer Settings",
+        title: "Project Settings",
         data: {
             filter: options.filter,
         },
@@ -243,12 +283,12 @@ htrackerTracer.EntryDel = function(id, is_confirm) {
 
     if (!is_confirm) {
         l4iModal.Open({
-            title: "Delete this Tracer",
-            tplsrc: '<div id="hpm-node-del" class="alert alert-danger">Are you sure to delete this Tracer?</div>',
+            title: "Remove this Project",
+            tplsrc: '<div id="hpm-node-del" class="alert alert-danger">Are you sure to delete this Project?</div>',
             width: 600,
             height: 200,
             buttons: [{
-                title: "Confirm and Delete",
+                title: "Confirm and Remove",
                 onclick: "htrackerTracer.EntryDel(\"" + id + "\", true)",
                 style: "btn-danger",
             }, {
@@ -797,7 +837,12 @@ htrackerTracer.ProcDyTraceList = function(tid, pid, pcreated) {
                 return l4i.InnerAlert(alert_id, 'error', data.error.message);
             }
             if (!data.items) {
-                return l4i.InnerAlert(alert_id, 'error', "No Process/Trace Found");
+                return l4i.InnerAlert(alert_id, 'warn', "No Process/Trace Found");
+            }
+            for (var i in data.items) {
+                if (!data.items[i].perf_size) {
+                    data.items[i].perf_size = 0;
+                }
             }
 
             l4iTemplate.Render({
@@ -840,9 +885,9 @@ htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
         width: "max",
         height: "max",
         buttons: [{
-            //     title: "Reset Zoom",
-            //     onclick: "htrackerTracer.ProcDyTraceViewReset()",
-            // }, {
+            title: "Reset Zoom",
+            onclick: "htrackerTracer.ProcDyTraceViewReset()",
+        }, {
             title: "Close",
             onclick: "l4iModal.Close()",
         }],
@@ -861,6 +906,8 @@ htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
         },
         callback: function() {
 
+            $("#htracker-tracer-flamegraph-body").html("loading ...");
+
             htracker.ApiCmd("tracer/proc-trace-graph-burn?" + url, {
                 callback: function(err, data) {
 
@@ -872,6 +919,7 @@ htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
                     htrackerTracer.flamegraphRender.transitionDuration(300);
                     htrackerTracer.flamegraphRender.cellHeight(16);
                     // htrackerTracer.flamegraphRender.minFrameSize(2);
+                    $("#htracker-tracer-flamegraph-body").html("");
                     d3.select("#htracker-tracer-flamegraph-body")
                         .datum(data.graph_burn)
                         .call(htrackerTracer.flamegraphRender);

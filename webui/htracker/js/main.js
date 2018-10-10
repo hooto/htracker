@@ -37,28 +37,29 @@ h3tracker.Boot = function() {
     seajs.config({
         base: h3tracker.frtbase,
         alias: {
-            ep: '~/lessui/js/eventproxy.js' + h3tracker.urlver(),
+            ep: '~/lessui/js/eventproxy.js',
         },
     });
 
     seajs.use([
-        "~/lessui/js/browser-detect.js" + h3tracker.urlver(),
-        "~/jquery/jquery.js" + h3tracker.urlver(),
-        "~/lessui/js/eventproxy.js" + h3tracker.urlver(),
+        "~/lessui/js/browser-detect.js",
+        "~/jquery/jquery.js",
+        "~/lessui/js/eventproxy.js",
     ], function() {
 
         seajs.use([
-            "~/bs/4/css/bootstrap.css" + h3tracker.urlver(),
-            "~/bs/4/js/bootstrap.js" + h3tracker.urlver(),
+            "~/bs/4/css/bootstrap.css",
+            "~/bs/4/js/bootstrap.js",
             "~/lessui/js/lessui.js" + h3tracker.urlver(),
             "~/lessui/css/lessui.css" + h3tracker.urlver(),
             "~/htracker/js/process.js" + h3tracker.urlver(),
             "~/htracker/js/tracer.js" + h3tracker.urlver(),
-            "~/hchart/hchart.js" + h3tracker.urlver(),
+            "~/hchart/hchart.js",
             "~/d3/d3.v4.js",
             "~/d3-tip/d3-tip.js",
             "~/d3-flamegraph/d3-flamegraph.js",
             "~/d3-flamegraph/d3-flamegraph.css",
+            "~/icono/icono.css",
         ], function() {
 
             hooto_chart.basepath = "/htracker/~/hchart";
@@ -70,10 +71,16 @@ h3tracker.Boot = function() {
                     }
                 }, 1000);
             }
+
             l4i.UrlEventRegister("process/index", htrackerProcess.Index, "htracker-nav");
             l4i.UrlEventRegister("tracer/index", htrackerTracer.Index, "htracker-nav");
 
-            h3tracker.Loader("#body-content", "index", {
+            l4iTemplate.Render({
+                dstid: "body-content",
+                tplurl: h3tracker.TplPath("index"),
+                data: {
+                    version: h3tracker.version,
+                },
                 callback: function() {
                     l4i.UrlEventHandler("tracer/index", true);
                 },
@@ -148,6 +155,9 @@ h3tracker.Loader = function(target, uri, options) {
 }
 
 h3tracker.UtilResSizeFormat = function(size, tofix) {
+    if (!size) {
+        return "0";
+    }
     var ms = [
         [7, "ZB"],
         [6, "EB"],
@@ -255,6 +265,7 @@ h3tracker.ModuleNavbarMenu = function(name, items, active) {
 
 h3tracker.ModuleNavbarMenuClean = function() {
     $("#htracker-module-navbar-menus").html("");
+    l4i.UrlEventClean("htracker-module-navbar-menus");
 }
 
 h3tracker.ModuleNavbarMenuRefresh = function(div_target, cb) {
@@ -267,6 +278,7 @@ h3tracker.ModuleNavbarMenuRefresh = function(div_target, cb) {
         return;
     }
     $("#htracker-module-navbar-menus").html(elem.innerHTML);
+    l4i.UrlEventClean("htracker-module-navbar-menus");
 
     if (cb && typeof cb === "function") {
         cb(null);

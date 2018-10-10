@@ -15,7 +15,9 @@
 
 <script type="text/html" id="htracker-tracer-proc-stats-menus">
 <li>
-  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcList()">Back to List</button>
+  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcList()">
+    <span class="icon16 icono-caretLeftCircle"></span>
+    Back to Hit Process List</button>
 </li>
 </script>
 

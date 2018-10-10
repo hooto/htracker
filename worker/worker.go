@@ -388,7 +388,7 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 		cmds := tracerActionDyTraceCommands(entry.Pid, perfPrefix)
 
 		for _, cmd := range cmds {
-			out, err = exec.Command("/bin/sh", "-c", cmd.Command).Output()
+			out, err = exec.Command("/bin/bash", "-c", cmd.Command).Output()
 			cmd.Done = true
 			if err != nil {
 				hlog.Printf("error", "failed to trace %s, err %s, out %s, cmd %s",

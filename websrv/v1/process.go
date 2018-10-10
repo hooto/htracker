@@ -176,11 +176,13 @@ func (c Process) ListAction() {
 		})
 	}
 
+	sets.Total = len(sets.Items)
+
 	if len(sets.Items) > limit {
 		sets.Items = sets.Items[:limit]
 	}
-
 	sets.Num = len(sets.Items)
+
 	sets.Updated = uint32(time.Now().Unix())
 
 	hlog.Printf("debug", "get processes %d in %v",

@@ -20,6 +20,10 @@ import (
 	"github.com/lynkdb/iomix/skv"
 )
 
+func DataPathProjEntry(ptype, id string) string {
+	return fmt.Sprintf("tracer/%s/%s", ptype, id)
+}
+
 func DataPathTracerEntry(id string) string {
 	return fmt.Sprintf("tracer/active/%s", id)
 }

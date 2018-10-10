@@ -41,6 +41,7 @@ type ProcessEntry struct {
 type ProcessList struct {
 	mu      sync.Mutex
 	Num     int             `json:"num"`
+	Total   int             `json:"total"`
 	Items   []*ProcessEntry `json:"items"`
 	Updated uint32          `json:"updated"`
 }

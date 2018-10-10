@@ -8,7 +8,7 @@
         <th>CPU %</th>
         <th>Memory</th>
         <th>Command</th>
-        <th></th>
+        <th width="30"></th>
       </tr>
       </thead>
       <tbody id="htracker-process-list"></tbody>
@@ -18,7 +18,7 @@
 
 <script type="text/html" id="htracker-process-list-menus">
 <li>
-  <button id="htracker-process-list-status-msg" class="btn btn-outline-secondary btn-sm" disabled>loading</button>
+  <div id="htracker-process-list-status-msg" class="badge badge-success" style="padding: 5px 10px;font-size:14px">loading</div>
 </li>
 </script>
 
@@ -34,7 +34,7 @@
 
 <script type="text/html" id="htracker-process-list-tpl">
 {[~it.items :v]}
-<tr>
+<tr class="htracker-div-hover" onclick="htrackerProcess.EntryView('{[=v.pid]}')">
   <td>{[=v.name]}</td>
   <td>{[=v.user]}</td>
   <td>{[=v.cpu_p]}</td>
@@ -47,7 +47,7 @@
     {[}]}
   </td>
   <td align="right">
-    <button class="btn btn-outline-primary btn-sm" onclick="htrackerProcess.EntryView('{[=v.pid]}')">Detail</button>
+    <i class="icono-caretRight" style="zoom: 85%; margin-right:0;"></i>
   </td>
 </tr>
 {[~]}

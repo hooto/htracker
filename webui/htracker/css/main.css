@@ -1,49 +1,53 @@
 body {
-	font-size: 12pt;
+  font-size: 12pt;
 }
 
 .htracker-table td {
-    padding: 6px 10px;
-	font-size: 1.1em;
+  padding: 6px 10px;
+  font-size: 1.1em;
 }
 
 .htracker-table td:first-child {
-    padding-left: 0;
+  padding-left: 0;
 }
 
 .htracker-table td:last-child {
-    padding-right: 0;
+  padding-right: 0;
 }
 
 .htracker-table p {
-   line-height: 200%;
+  line-height: 200%;
 }
 
 .htracker-table-item-name {
-	font-weight: 600;
+  font-weight: 600;
 }
 
 .htracker-modal-container {
-	padding: 5px 0;
+  padding: 5px 0;
 }
 
 .htracker-modal-container .row {
-	margin: 0;
-}
-.htracker-modal-container .col-form-label {
-	padding-left: 0;
-}
-.htracker-modal-container div:last-child {
-	padding-right: 0;
+  margin: 0;
 }
 
-#htracker-nav > li {
+.htracker-modal-container .col-form-label {
+  padding-left: 0;
+}
+
+.htracker-modal-container div:last-child {
+  padding-right: 0;
+}
+
+#htracker-nav>li {
   padding-left: 10px;
   padding-right: 10px;
 }
-#htracker-nav > li > a {
+
+#htracker-nav>li>a {
   font-size: 1.2em;
 }
+
 
 .htracker-nav-right {
   float: right !important;
@@ -71,6 +75,16 @@ body {
 
 #htracker-module-layout>#htracker-module-navbar {
   padding: 0 10px;
+}
+
+#htracker-module-layout button {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#htracker-module-layout button .icon16 {
+  zoom: 55%;
+  margin: 0 5px 2px -5px;
 }
 
 .htracker-module-nav {
@@ -166,16 +180,24 @@ body {
   color: #fff;
 }
 
-#htracker-module-navbar-optools button {
-  font-size: 12px;
+#htracker-module-navbar-optools {
   line-height: 100%;
+  font-size: 14px;
+}
+
+#htracker-module-navbar-optools button {
+  height: 30px;
+  line-height: 100%;
+  padding: 5px 10px;
+  font-size: 14px;
 }
 
 #htracker-module-navbar-optools input {
-  margin: 0;
   height: 30px;
-  font-size: 12px;
   line-height: 100%;
+  padding: 5px 10px;
+  margin: 0;
+  font-size: 14px;
   border-radius: 2px;
   background-color: #fff;
   color: #000;
@@ -204,11 +226,11 @@ body {
 }
 
 .table th {
-	border-top: 0px !important;
+  border-top: 0px !important;
 }
 
 .table.valign-middle td {
-    vertical-align: middle !important;
+  vertical-align: middle !important;
 }
 
 .htracker-tracer-proc-stats-item {
@@ -228,13 +250,14 @@ body {
 }
 
 .htracker-body-footer {
-  margin: 10px 0;
+  margin: 10px;
   text-align: center;
-  color: #343a40;
+  color: #6c757d;
   font-size: 1em;
 }
 
 .htracker-body-footer a {
-  color: #343a40;
+  color: #6c757d;
   font-size: 1.1em;
+  text-decoration: underline;
 }

@@ -14,11 +14,13 @@
 
 
 var htrackerProcess = {
+    listLimit: 30,
     listLastUpdated: 0,
     entryActive: null,
 }
 
 htrackerProcess.Index = function() {
+    h3tracker.KeyUpEscHook = null;
     htracker.Loader("#htracker-module-content", "process/list", {
         callback: function() {
             htrackerProcess.ListRefresh();
@@ -32,7 +34,7 @@ htrackerProcess.ListRefresh = function() {
     if (!elem) {
         return;
     }
-    var url = "limit=20";
+    var url = "limit=" + htrackerProcess.listLimit;
     var elemq = document.getElementById("htracker-process-list-query");
     if (elemq && elemq.value.length > 0) {
         url += ("&q=" + elemq.value);
@@ -52,14 +54,15 @@ htrackerProcess.ListRefresh = function() {
                     data: data,
                 });
                 htrackerProcess.listLastUpdated = data.updated;
-            }
 
-            var msg = "Updated at " + l4i.UnixTimeFormat(data.updated, "Y-m-d H:i:s");
-            $("#htracker-process-list-status-msg").text(msg);
+                var msg = l4i.T("Top %d/%d processes at %s",
+                    data.num, data.total, l4i.UnixTimeFormat(data.updated, "Y-m-d H:i:s"));
+                $("#htracker-process-list-status-msg").text(msg);
+            }
 
             window.setTimeout(function() {
                 htrackerProcess.ListRefresh();
-            }, 5000);
+            }, 60000);
         },
     });
 }

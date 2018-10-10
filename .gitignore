@@ -6,4 +6,5 @@ gorun
 in*
 *.rpm
 *.txz
+webui/htracker/img/
 
