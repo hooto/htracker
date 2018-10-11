@@ -22,8 +22,8 @@ func NewModule() httpsrv.Module {
 
 	module := httpsrv.NewModule("api_v1")
 
-	module.ControllerRegister(new(Process))
-	module.ControllerRegister(new(Tracer))
+	module.ControllerRegister(new(Proc))
+	module.ControllerRegister(new(Proj))
 
 	return module
 }

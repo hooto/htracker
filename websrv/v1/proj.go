@@ -28,19 +28,20 @@ import (
 	"github.com/hooto/htracker/hapi"
 )
 
-type Tracer struct {
+type Proj struct {
 	*httpsrv.Controller
 }
 
-func (c Tracer) ListAction() {
+func (c Proj) ListAction() {
 
-	var sets hapi.TracerList
+	var sets hapi.ProjList
 	defer c.RenderJson(&sets)
 
 	var (
 		limit  = int(c.Params.Int64("limit"))
 		closed = c.Params.Get("filter_closed")
 		ptype  = "active"
+		pptype = "hit"
 	)
 
 	if limit < 10 {
@@ -51,6 +52,7 @@ func (c Tracer) ListAction() {
 
 	if closed == "true" {
 		ptype = "hist"
+		pptype = "exit"
 	}
 
 	var (
@@ -64,9 +66,12 @@ func (c Tracer) ListAction() {
 	}
 
 	rs.KvEach(func(entry *skv.ResultEntry) int {
-		var set hapi.TracerEntry
+		var set hapi.ProjEntry
 		if err := entry.Decode(&set); err == nil {
-			mkey := hapi.DataPathTracerProcessEntry(set.Id, 0, 0)
+			if ptype == "active" && set.Closed > 0 {
+				return 0
+			}
+			mkey := hapi.DataPathProjProcEntry(pptype, set.Id, 0, 0)
 			if rs2 := data.Data.KvProgGet(mkey); rs2.OK() {
 				if meta := rs2.Meta(); meta != nil {
 					set.ProcNum = int(meta.Num)
@@ -77,12 +82,12 @@ func (c Tracer) ListAction() {
 		return 0
 	})
 
-	sets.Kind = "TracerList"
+	sets.Kind = "ProjList"
 }
 
-func (c Tracer) SetAction() {
+func (c Proj) SetAction() {
 
-	var set hapi.TracerEntry
+	var set hapi.ProjEntry
 	defer c.RenderJson(&set)
 
 	if err := c.Request.JsonDecode(&set); err != nil {
@@ -91,6 +96,7 @@ func (c Tracer) SetAction() {
 	}
 
 	set.Created = uint32(time.Now().Unix())
+	set.Name = strings.TrimSpace(set.Name)
 
 	if set.Filter.ProcId > 0 {
 		p, err := process.NewProcess(set.Filter.ProcId)
@@ -103,7 +109,10 @@ func (c Tracer) SetAction() {
 			created, _ = p.CreateTime()
 		)
 		set.Filter.ProcCreated = uint32(created / 1e3)
-		set.Name = name
+		if set.Name == "" {
+			set.Name = name
+		}
+
 	} else if set.Filter.ProcName != "" {
 
 		set.Filter.ProcName = strings.TrimSpace(set.Filter.ProcName)
@@ -112,15 +121,30 @@ func (c Tracer) SetAction() {
 			return
 		}
 
-		set.Name = set.Filter.ProcName
+		if set.Name == "" {
+			set.Name = set.Filter.ProcName
+		}
+
+	} else if set.Filter.ProcCommand != "" {
+
+		set.Filter.ProcCommand = strings.TrimSpace(set.Filter.ProcCommand)
+		if set.Filter.ProcCommand == "" {
+			set.Error = types.NewErrorMeta("400", "Process Command Not Found")
+			return
+		}
 
 	} else {
-		set.Error = types.NewErrorMeta("400", "Invalid Request : TracerFilter")
+		set.Error = types.NewErrorMeta("400", "Invalid Request : ProjFilter")
+		return
+	}
+
+	if set.Name == "" {
+		set.Error = types.NewErrorMeta("400", "Project Name Not Found")
 		return
 	}
 
 	set.Id = hapi.ObjectId(set.Created, 8)
-	key := hapi.DataPathTracerEntry(set.Id)
+	key := hapi.DataPathProjActiveEntry(set.Id)
 
 	if rs := data.Data.KvGet([]byte(key)); rs.OK() {
 		set.Error = types.NewErrorMeta("400", "Tracker already exists")
@@ -135,16 +159,16 @@ func (c Tracer) SetAction() {
 		return
 	}
 
-	set.Kind = "TracerEntry"
+	set.Kind = "ProjEntry"
 }
 
-func (c Tracer) DelAction() {
+func (c Proj) DelAction() {
 
 	var (
 		set  types.TypeMeta
 		id   = c.Params.Get("id")
-		key  = hapi.DataPathTracerEntry(id)
-		prev hapi.TracerEntry
+		key  = hapi.DataPathProjActiveEntry(id)
+		prev hapi.ProjEntry
 	)
 	defer c.RenderJson(&set)
 
@@ -157,13 +181,15 @@ func (c Tracer) DelAction() {
 			set.Error = types.NewErrorMeta("500", "Invalid Object Define")
 		} else {
 
-			key_history := hapi.DataPathTracerEntryHistory(id)
+			prev.Closed = uint32(time.Now().Unix())
+
+			key_history := hapi.DataPathProjHistoryEntry(id)
 			if rs := data.Data.KvPut([]byte(key_history), prev, nil); !rs.OK() {
 				set.Error = types.NewErrorMeta("400", "Server Error")
-			} else if rs := data.Data.KvDel([]byte(key)); !rs.OK() {
+			} else if rs := data.Data.KvPut([]byte(key), prev, nil); !rs.OK() {
 				set.Error = types.NewErrorMeta("500", "Server Error")
 			} else {
-				set.Kind = "TracerEntry"
+				set.Kind = "ProjEntry"
 			}
 		}
 	}

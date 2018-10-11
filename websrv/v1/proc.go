@@ -15,30 +15,30 @@
 package v1
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/hooto/hlog4g/hlog"
-	"github.com/hooto/htracker/hapi"
 	"github.com/hooto/httpsrv"
 	"github.com/lessos/lessgo/types"
-
 	"github.com/shirou/gopsutil/process"
+
+	"github.com/hooto/htracker/hapi"
+	"github.com/hooto/htracker/status"
 )
 
-type Process struct {
+type Proc struct {
 	*httpsrv.Controller
 }
 
 var (
-	plist hapi.ProcessList
+	plist hapi.ProcList
 )
 
-func (c Process) EntryAction() {
+func (c Proc) EntryAction() {
 
-	var set hapi.ProcessEntry
+	var set hapi.ProcEntry
 	defer c.RenderJson(&set)
 
 	var (
@@ -60,7 +60,7 @@ func (c Process) EntryAction() {
 		status, _  = p.Status()
 	)
 
-	set = hapi.ProcessEntry{
+	set = hapi.ProcEntry{
 		Pid:     p.Pid,
 		Created: uint32(created / 1e3),
 		Name:    name,
@@ -74,12 +74,12 @@ func (c Process) EntryAction() {
 		set.MemRss = int64(memi.RSS)
 	}
 
-	set.Kind = "ProcessEntry"
+	set.Kind = "ProcEntry"
 }
 
-func (c Process) ListAction() {
+func (c Proc) ListAction() {
 
-	var sets hapi.ProcessList
+	var sets hapi.ProcList
 	defer c.RenderJson(&sets)
 
 	var (
@@ -106,27 +106,27 @@ func (c Process) ListAction() {
 		return
 	}
 
-	pls, err := process.Processes()
+	err := status.ProcListRefresh()
 	if err != nil {
+		sets.Error = types.NewErrorMeta("500", "Server Pending")
 		return
 	}
-	for _, p := range pls {
 
-		if p.Pid < 300 {
+	for _, p := range status.ProcList.Items {
+
+		if p.Process == nil {
+			continue
+		}
+
+		if len(q) > 0 &&
+			!strings.Contains(p.Name, q) &&
+			!strings.Contains(p.Cmd, q) {
 			continue
 		}
 
 		var (
-			name, _ = p.Name()
-			cmd, _  = p.Cmdline()
-			user, _ = p.Username()
+			user, _ = p.Process.Username()
 		)
-
-		if len(q) > 0 &&
-			!strings.Contains(name, q) &&
-			!strings.Contains(cmd, q) {
-			continue
-		}
 
 		if filter_user != "" &&
 			filter_user != user {
@@ -134,36 +134,25 @@ func (c Process) ListAction() {
 		}
 
 		var (
-			created, _ = p.CreateTime()
-			cpup, _    = p.CPUPercent()
-			status, _  = p.Status()
+			cpup, _   = p.Process.CPUPercent()
+			status, _ = p.Process.Status()
 		)
 
-		set := &hapi.ProcessEntry{
+		set := &hapi.ProcEntry{
 			Pid:     p.Pid,
-			Created: uint32(created / 1e3),
-			Name:    name,
-			Cmd:     cmd,
+			Created: p.Created,
+			Name:    p.Name,
+			Cmd:     p.Cmd,
 			CpuP:    hapi.Float64Round(cpup, 2),
 			User:    user,
 			Status:  status,
 		}
 
-		if memi, _ := p.MemoryInfo(); memi != nil {
+		if memi, _ := p.Process.MemoryInfo(); memi != nil {
 			set.MemRss = int64(memi.RSS)
 		}
 
 		sets.Items = append(sets.Items, set)
-
-		pcn := 0
-		if pc, err := p.Children(); err == nil {
-			pcn = len(pc)
-		}
-
-		if false {
-			fmt.Println("pid", p.Pid, "pcn", pcn, "cpu", set.CpuP,
-				"name", set.Name)
-		}
 	}
 
 	if sort_by == "cpu" {
@@ -188,5 +177,6 @@ func (c Process) ListAction() {
 	hlog.Printf("debug", "get processes %d in %v",
 		sets.Num, time.Since(stats_start))
 
+	sets.Kind = "ProcList"
 	plist = sets
 }

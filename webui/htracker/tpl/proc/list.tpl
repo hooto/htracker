@@ -11,20 +11,20 @@
         <th width="30"></th>
       </tr>
       </thead>
-      <tbody id="htracker-process-list"></tbody>
+      <tbody id="htracker-proc-list"></tbody>
     </table>
   </div>
 </div>
 
-<script type="text/html" id="htracker-process-list-menus">
+<script type="text/html" id="htracker-proc-list-menus">
 <li>
-  <div id="htracker-process-list-status-msg" class="badge badge-success" style="padding: 5px 10px;font-size:14px">loading</div>
+  <div id="htracker-proc-list-status-msg" class="badge badge-success" style="padding: 5px 10px;font-size:14px">loading</div>
 </li>
 </script>
 
-<script type="text/html" id="htracker-process-list-optools">
-<form class="input-group mb-3" onsubmit="htrackerProcess.ListRefreshQuery(); return false;">
-  <input class="form-control" type="text" id="htracker-process-list-query">
+<script type="text/html" id="htracker-proc-list-optools">
+<form class="input-group mb-3" onsubmit="htrackerProc.ListRefreshQuery(); return false;">
+  <input class="form-control" type="text" id="htracker-proc-list-query">
   <div class="input-group-append">
     <button class="btn btn-outline-secondary" type="button">Search</button>
   </div>
@@ -32,12 +32,12 @@
 </script>
 
 
-<script type="text/html" id="htracker-process-list-tpl">
+<script type="text/html" id="htracker-proc-list-tpl">
 {[~it.items :v]}
-<tr class="htracker-div-hover" onclick="htrackerProcess.EntryView('{[=v.pid]}')">
+<tr class="htracker-div-hover" onclick="htrackerProc.EntryView('{[=v.pid]}')">
   <td>{[=v.name]}</td>
   <td>{[=v.user]}</td>
-  <td>{[=v.cpu_p]}</td>
+  <td>{[=v.cpu_p.toFixed(2)]}</td>
   <td>{[=htracker.UtilResSizeFormat(v.mem_rss)]}</td>
   <td>
     {[if (v.cmd.length > 60) {]}
@@ -53,7 +53,7 @@
 {[~]}
 </script>
 
-<script type="text/html" id="htracker-process-entry-tpl">
+<script type="text/html" id="htracker-proc-entry-tpl">
 <table class="htracker-table">
 <tr>
   <td class="htracker-table-item-name" width="200px">Name</td>

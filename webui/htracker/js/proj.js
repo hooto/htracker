@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-var htrackerTracer = {
+var htrackerProj = {
     entryActive: null,
     entryActiveId: null,
     proc_stats_active_past: 3600,
@@ -36,74 +36,92 @@ var htrackerTracer = {
         uri: "proj/list/history",
     }],
     listMenuActive: null,
+    listAutoRefreshTimer: null,
+    procListMenus: [{
+        name: "Current Running Processes",
+        uri: "proj/proc/hit",
+    }, {
+        name: "Exited Processes",
+        uri: "proj/proc/exit",
+    }],
+    procListMenuActive: null,
 }
 
-htrackerTracer.Index = function() {
+htrackerProj.Index = function() {
 
-    h3tracker.KeyUpEscHook = null;
+    htracker.KeyUpEscHook = null;
+    htracker.ModuleNavbarLeftClean();
 
-    htracker.Loader("#htracker-module-content", "tracer/list", {
+    if (!htrackerProj.listMenuActive) {
+        htrackerProj.listMenuActive = "proj/list/active";
+    }
+
+    htracker.Loader("#htracker-module-content", "proj/list", {
         callback: function() {
-            htracker.ModuleNavbarMenu("projmenus", htrackerTracer.listMenus);
-            l4i.UrlEventRegister("proj/list/active", htrackerTracer.ListRefreshActive, "htracker-module-navbar-menus");
-            l4i.UrlEventRegister("proj/list/history", htrackerTracer.ListRefreshHistory, "htracker-module-navbar-menus");
-            l4i.UrlEventHandler("proj/list/active", true);
+            htracker.ModuleNavbarMenu("projmenus", htrackerProj.listMenus);
+            l4i.UrlEventRegister("proj/list/active", htrackerProj.ListRefreshActive, "htracker-module-navbar-menus");
+            l4i.UrlEventRegister("proj/list/history", htrackerProj.ListRefreshHistory, "htracker-module-navbar-menus");
+            l4i.UrlEventHandler(htrackerProj.listMenuActive, true);
         },
     });
 }
 
-htrackerTracer.ListRefreshActive = function() {
-    htrackerTracer.ListRefresh("proj/list/active");
+htrackerProj.ListRefreshActive = function() {
+    htrackerProj.ListRefresh("proj/list/active");
 }
 
-htrackerTracer.ListRefreshHistory = function() {
-    htrackerTracer.ListRefresh("proj/list/history");
+htrackerProj.ListRefreshHistory = function() {
+    htrackerProj.ListRefresh("proj/list/history");
 }
 
-htrackerTracer.ListRefresh = function(list_active) {
+htrackerProj.ListRefresh = function(list_active) {
 
-    htrackerTracer.entryActiveId = null;
+    htrackerProj.entryActiveId = null;
 
-    var elem = document.getElementById("htracker-tracer-list");
+    var elem = document.getElementById("htracker-projlist");
     if (!elem) {
         return;
     }
     var url = "limit=20";
-    var elemq = document.getElementById("htracker-tracer-list-query");
+    var elemq = document.getElementById("htracker-projlist-query");
     if (elemq && elemq.value.length > 0) {
         url += ("&q=" + elemq.value);
     }
-    var alert_id = "#htracker-tracer-list-alert";
+    var alert_id = "#htracker-projlist-alert";
 
-    if (!list_active && htrackerTracer.listMenuActive) {
-        list_active = htrackerTracer.listMenuActive;
+    if (!list_active && htrackerProj.listMenuActive) {
+        list_active = htrackerProj.listMenuActive;
     }
     if (list_active != "proj/list/history") {
         list_active = "proj/list/active";
     } else {
         url += "&filter_closed=true";
     }
-    htrackerTracer.listMenuActive = list_active;
+    htrackerProj.listMenuActive = list_active;
+    htrackerProj.procListMenuActive = null;
 
-    // htracker.ModuleNavbarMenuRefresh("htracker-tracer-list-menus");
-    // h3tracker.ModuleNavbarMenu("projlist", htrackerTracer.ListMenus, list_active);
-    htracker.OpToolsRefresh("#htracker-tracer-list-optools");
+    // htracker.ModuleNavbarMenuRefresh("htracker-projlist-menus");
+    // htracker.ModuleNavbarMenu("projlist", htrackerProj.ListMenus, list_active);
+    htracker.ModuleNavbarLeftClean();
+    htracker.OpToolsRefresh("#htracker-projlist-optools");
 
-    htracker.ApiCmd("tracer/list?" + url, {
+    htracker.ApiCmd("proj/list?" + url, {
         callback: function(err, data) {
 
             if (err) {
-                $("#htracker-tracer-list").empty();
+                $("#htracker-projlist").empty();
                 return l4i.InnerAlert(alert_id, "error", err);
             }
             if (data.error) {
-                $("#htracker-tracer-list").empty();
+                $("#htracker-projlist").empty();
                 return l4i.InnerAlert(alert_id, "error", data.error.message);
             }
             if (!data.items || data.items.length < 1) {
-                $("#htracker-tracer-list").empty();
+                $("#htracker-projlist").empty();
                 return l4i.InnerAlert(alert_id, "warn", "No Project Found");
             }
+
+            var waiting = false;
 
             for (var i in data.items) {
                 var filter_title = [];
@@ -111,9 +129,12 @@ htrackerTracer.ListRefresh = function(list_active) {
                     filter_title.push("ProcID: " + data.items[i].filter.proc_id);
                 } else if (data.items[i].filter.proc_name) {
                     filter_title.push("ProcName: " + data.items[i].filter.proc_name);
+                } else if (data.items[i].filter.proc_cmd) {
+                    filter_title.push("ProcCmd: " + data.items[i].filter.proc_cmd);
                 }
                 if (!data.items[i].proc_num) {
                     data.items[i].proc_num = 0;
+                    waiting = true;
                 }
                 if (!data.items[i].closed) {
                     data.items[i].closed = 0;
@@ -125,45 +146,52 @@ htrackerTracer.ListRefresh = function(list_active) {
             }
 
             l4iTemplate.Render({
-                dstid: "htracker-tracer-list",
-                tplid: "htracker-tracer-list-tpl",
+                dstid: "htracker-projlist",
+                tplid: "htracker-projlist-tpl",
                 data: data,
             });
             l4i.InnerAlert(alert_id);
+
+            if (waiting && list_active == "proj/list/active" && !htrackerProj.listAutoRefreshTimer) {
+                htrackerProj.listAutoRefreshTimer = window.setTimeout(function() {
+                    htrackerProj.listAutoRefreshTimer = null;
+                    htrackerProj.ListRefresh();
+                }, 10000);
+            }
         },
     });
 }
 
 
-htrackerTracer.ListRefreshQuery = function() {
-    htrackerTracer.ListRefresh();
+htrackerProj.ListRefreshQuery = function() {
+    htrackerProj.ListRefresh();
 }
 
-htrackerTracer.EntryView = function(id) {
+htrackerProj.EntryView = function(id) {
 
-    htracker.ApiCmd("tracer/entry?id=" + id, {
+    htracker.ApiCmd("proj/entry?id=" + id, {
         callback: function(err, data) {
 
             if (err) {
-                return l4iAlert.Open("error", "Failed to get tracer (#" + pid + ")");
+                return l4iAlert.Open("error", "Failed to get proj (#" + pid + ")");
             }
 
             if (data.error) {
                 return l4iAlert.Open("error", data.error.message);
             }
 
-            htrackerTracer.entryActive = data;
+            htrackerProj.entryActive = data;
 
             l4iModal.Open({
-                id: "htracker-tracer-new",
+                id: "htracker-proj-new",
                 title: "Project Overview",
                 data: data,
-                tplid: "htracker-tracer-entry-tpl",
+                tplid: "htracker-proj-entry-tpl",
                 width: 900,
                 height: 500,
                 buttons: [{
                     title: "Trace by Name",
-                    onclick: "htrackerTracer.TraceByName()",
+                    onclick: "htrackerProj.TraceByName()",
                     style: "btn-primary",
                 }, {
                     title: "Close",
@@ -174,83 +202,159 @@ htrackerTracer.EntryView = function(id) {
     });
 }
 
-htrackerTracer.newEntryOptions = null;
+htrackerProj.newEntryOptions = null;
 
-htrackerTracer.NewEntry = function(options) {
+htrackerProj.NewEntry = function(options) {
     options = options || {};
     if (!options.modal_id) {
-        options.modal_id = "htracker-trace-new";
+        options.modal_id = "htracker-projnew";
     }
+    var fn = null;
     if (!options.filter) {
+        fn = htrackerProj.NewEntrySelector;
     } else {
         if (options.filter.proc_id && options.filter.proc_id > 0) {
-            options.modal_id = "htracker-trace-new-pid";
-            htrackerTracer.NewEntryProcessId(options);
+            options.modal_id = "htracker-projnew-pid";
+            fn = htrackerProj.NewEntryProcId;
+        // htrackerProj.NewEntryProcId(options);
         } else if (options.filter.proc_name) {
-            options.modal_id = "htracker-trace-new-pname";
-            htrackerTracer.NewEntryProcessName(options);
+            options.modal_id = "htracker-projnew-pname";
+            fn = htrackerProj.NewEntryProcName;
+        // htrackerProj.NewEntryProcName(options);
         }
     }
-    htrackerTracer.newEntryOptions = options;
+    htrackerProj.newEntryOptions = options;
+    if (fn) {
+        fn(htrackerProj.newEntryOptions);
+    }
 }
 
-htrackerTracer.NewEntryProcessId = function(options) {
+htrackerProj.NewEntrySelector = function(options) {
+
+    l4iModal.Open({
+        id: options.modal_id,
+        title: "Project Settings",
+        tpluri: htracker.TplPath("proj/entry-new-selector"),
+        width: 900,
+        height: 450,
+        buttons: [{
+            title: "Close",
+            onclick: "l4iModal.Close()",
+        }],
+    });
+}
+
+htrackerProj.NewEntryProcId = function(options) {
+
+    options = options || {};
+    options.modal_id = options.modal_id || "htracker-projnew-pid";
+    options.filter = options.filter || {};
+    options.filter.proc_id = options.filter.proc_id || "";
 
     l4iModal.Open({
         id: options.modal_id,
         title: "Project Settings",
         data: {
+            name: "",
             filter: options.filter,
         },
-        tpluri: htracker.TplPath("tracer/entry-new-pid"),
+        tpluri: htracker.TplPath("proj/entry-new-pid"),
         width: 900,
         height: 450,
         backEnable: true,
         buttons: [{
             title: "Next",
-            onclick: "htrackerTracer.NewEntryCommit()",
+            onclick: "htrackerProj.NewEntryCommit()",
             style: "btn-primary",
         }],
     });
 }
 
-htrackerTracer.NewEntryProcessName = function(options) {
+htrackerProj.NewEntryProcName = function(options) {
+
+    options = options || {};
+    if (!options.modal_id) {
+        options.modal_id = "htracker-projnew-pname";
+    }
+    options.filter = options.filter || {};
+    options.filter.proc_name = options.filter.proc_name || "";
 
     l4iModal.Open({
         id: options.modal_id,
         title: "Project Settings",
         data: {
+            name: "",
             filter: options.filter,
         },
-        tpluri: htracker.TplPath("tracer/entry-new-pname"),
+        tpluri: htracker.TplPath("proj/entry-new-pname"),
         width: 900,
         height: 450,
         backEnable: true,
         buttons: [{
             title: "Next",
-            onclick: "htrackerTracer.NewEntryCommit()",
+            onclick: "htrackerProj.NewEntryCommit()",
+            style: "btn-primary",
+        }],
+    });
+}
+
+htrackerProj.NewEntryProcCommand = function(options) {
+
+    options = options || {};
+    if (!options.modal_id) {
+        options.modal_id = "htracker-projnew-pcmd";
+    }
+    options.filter = options.filter || {};
+    options.filter.proc_cmd = options.filter.proc_cmd || "";
+
+    l4iModal.Open({
+        id: options.modal_id,
+        title: "Project Settings",
+        data: {
+            name: "",
+            filter: options.filter,
+        },
+        tpluri: htracker.TplPath("proj/entry-new-pcmd"),
+        width: 900,
+        height: 450,
+        backEnable: true,
+        buttons: [{
+            title: "Next",
+            onclick: "htrackerProj.NewEntryCommit()",
             style: "btn-primary",
         }],
     });
 }
 
 
-htrackerTracer.NewEntryCommit = function() {
-    var alert_id = "#htracker-tracerset-alert";
+htrackerProj.NewEntryCommit = function() {
+    var alert_id = "#htracker-projset-alert";
     var req = {
         filter: {},
     };
     try {
-        if (htrackerTracer.newEntryOptions.filter.proc_id) {
-            req.filter.proc_id = parseInt($("#htracker_tracerset_proc_id").val());
-        } else if (htrackerTracer.newEntryOptions.filter.proc_name) {
-            req.filter.proc_name = $("#htracker_tracerset_proc_name").val();
+        var elem = $("#htracker_projset_proc_id");
+        if (elem) {
+            req.filter.proc_id = parseInt(elem.val());
+        }
+        elem = $("#htracker_projset_proc_name");
+        if (elem) {
+            req.filter.proc_name = elem.val();
+        }
+        elem = $("#htracker_projset_proc_cmd");
+        if (elem) {
+            req.filter.proc_cmd = elem.val();
+        }
+
+        elem = $("#htracker_projset_name");
+        if (elem) {
+            req.name = elem.val();
         }
     } catch (err) {
         return l4i.InnerAlert(alert_id, 'error', err);
     }
 
-    htracker.ApiCmd("tracer/set", {
+    htracker.ApiCmd("proj/set", {
         method: "POST",
         data: JSON.stringify(req),
         callback: function(err, rsj) {
@@ -259,7 +363,7 @@ htrackerTracer.NewEntryCommit = function() {
                 return l4i.InnerAlert(alert_id, 'error', err);
             }
 
-            if (!rsj || rsj.kind != "TracerEntry") {
+            if (!rsj || rsj.kind != "ProjEntry") {
                 var msg = "Bad Request";
                 if (rsj.error) {
                     msg = rsj.error.message;
@@ -270,19 +374,20 @@ htrackerTracer.NewEntryCommit = function() {
             l4i.InnerAlert(alert_id, 'ok', "Successful operation");
 
             window.setTimeout(function() {
+                htrackerProj.ListRefresh("proj/list/active");
                 l4iModal.Close();
-            }, 600);
+            }, 1000);
         }
     })
 }
 
-htrackerTracer.EntryDel = function(id, is_confirm) {
+htrackerProj.EntryDel = function(id, is_confirm) {
 
     if (!id) {
-        if (!htrackerTracer.entryActiveId) {
+        if (!htrackerProj.entryActiveId) {
             return;
         }
-        id = htrackerTracer.entryActiveId;
+        id = htrackerProj.entryActiveId;
     }
 
     if (!is_confirm) {
@@ -293,7 +398,7 @@ htrackerTracer.EntryDel = function(id, is_confirm) {
             height: 200,
             buttons: [{
                 title: "Confirm and Remove",
-                onclick: "htrackerTracer.EntryDel(\"" + id + "\", true)",
+                onclick: "htrackerProj.EntryDel(\"" + id + "\", true)",
                 style: "btn-danger",
             }, {
                 title: "Cancel",
@@ -304,16 +409,17 @@ htrackerTracer.EntryDel = function(id, is_confirm) {
         return;
     }
 
-    var alert_id = "#htracker-tracer-list-alert";
+    var alert_id = "#hpm-node-del";
+    l4i.InnerAlert(alert_id, 'warn', "pending ...");
 
-    htracker.ApiCmd("tracer/del?id=" + id, {
+    htracker.ApiCmd("proj/del?id=" + id, {
         callback: function(err, rsj) {
 
             if (err) {
                 return l4i.InnerAlert(alert_id, 'error', err);
             }
 
-            if (!rsj || rsj.kind != "TracerEntry") {
+            if (!rsj || rsj.kind != "ProjEntry") {
                 var msg = "Bad Request";
                 if (rsj.error) {
                     msg = rsj.error.message;
@@ -321,59 +427,129 @@ htrackerTracer.EntryDel = function(id, is_confirm) {
                 return l4i.InnerAlert(alert_id, 'error', msg);
             }
 
-            $("#tracer-" + id).remove();
-            l4iModal.Close();
+            // $("#proj-" + id).remove();
 
             l4i.InnerAlert(alert_id, 'ok', "Successful operation");
             window.setTimeout(function() {
-                l4i.InnerAlert(alert_id, '');
-            }, 2000);
-
+                htrackerProj.Index();
+                l4iModal.Close();
+            }, 1000);
         }
     });
 }
 
 
-htrackerTracer.ProcList = function(tid) {
-    if (!tid) {
-        tid = htrackerTracer.entryActiveId;
+htrackerProj.ProcIndex = function(proj_id) {
+
+    if (!proj_id) {
+        proj_id = htrackerProj.entryActiveId;
     } else {
-        htrackerTracer.entryActiveId = tid;
+        htrackerProj.entryActiveId = proj_id;
     }
 
-    if (!tid) {
+    if (!proj_id) {
         return;
     }
 
-    var alert_id = "#htracker-tracer-proc-list-alert";
-    var url = "tracer_id=" + tid + "&limit=20";
+    if (!htrackerProj.procListMenuActive) {
+        htrackerProj.procListMenuActive = "proj/proc/hit";
+    }
+
+    htracker.Loader("#htracker-module-content", "proj/proc-list", {
+        callback: function() {
+            htracker.ModuleNavbarLeftClean();
+
+            if (htrackerProj.listMenuActive == "proj/list/history") {
+                htracker.ModuleNavbarMenuClean();
+                return htrackerProj.ProcListExit();
+            }
+
+            htracker.ModuleNavbarMenu("projProcMenus", htrackerProj.procListMenus);
+            l4i.UrlEventRegister("proj/proc/hit", htrackerProj.ProcListHit, "htracker-module-navbar-menus");
+            l4i.UrlEventRegister("proj/proc/exit", htrackerProj.ProcListExit, "htracker-module-navbar-menus");
+            l4i.UrlEventHandler(htrackerProj.procListMenuActive, true);
+        },
+    });
+}
+
+htrackerProj.ProcListHit = function() {
+    htrackerProj.ProcList(null, "proj/proc/hit");
+}
+
+htrackerProj.ProcListExit = function() {
+    htrackerProj.ProcList(null, "proj/proc/exit");
+}
+
+
+htrackerProj.ProcList = function(proj_id, list_active) {
+
+    if (!proj_id) {
+        proj_id = htrackerProj.entryActiveId;
+    } else {
+        htrackerProj.entryActiveId = proj_id;
+    }
+
+    if (!proj_id) {
+        return;
+    }
+    var alert_id = "#htracker-proj-proclist-alert";
+    var url = "proj_id=" + proj_id + "&limit=20";
+
+    if (htrackerProj.listMenuActive == "proj/list/history") {
+        list_active = "proj/proc/exit";
+    }
+
+    if (!list_active && htrackerProj.procListMenuActive) {
+        list_active = htrackerProj.procListMenuActive;
+    }
+    if (list_active != "proj/proc/exit") {
+        list_active = "proj/proc/hit";
+    } else {
+        url += "&filter_exit=true";
+    }
+
+    htrackerProj.procListMenuActive = list_active;
+    l4i.InnerAlert(alert_id);
 
     seajs.use(["ep"], function(EventProxy) {
 
-        var ep = EventProxy.create("tpl", "data", function(tpl, data) {
+        var ep = EventProxy.create("data", function(data) {
 
-            if (tpl) {
-                $("#htracker-module-content").html(tpl);
-                htracker.ModuleNavbarMenuRefresh("htracker-tracer-proc-list-menus");
-                htracker.OpToolsRefresh("#htracker-tracer-proc-list-optools");
-
+            htracker.ModuleNavbarLeftRefresh("htracker-proj-proclist-menus");
+            htracker.OpToolsRefresh("#htracker-proj-proclist-optools");
+            if (list_active == "proj/proc/exit") {
+                // htracker.OpToolsClean();
+            } else {
             }
 
             if (data.error) {
+                $("#htracker-proj-proclist").empty();
                 return l4i.InnerAlert(alert_id, 'error', data.error.message);
             }
             if (!data.items) {
+                $("#htracker-proj-proclist").empty();
                 return l4i.InnerAlert(alert_id, 'error', "No Process Found");
             }
+
             for (var i in data.items) {
                 if (!data.items[i].cmd) {
                     data.items[i].cmd = "";
                 }
+                if (!data.items[i].exited) {
+                    data.items[i].exited = 0;
+                }
             }
 
+            if (list_active == "proj/proc/exit") {
+                data._exit = true;
+            } else {
+                data._hit = true;
+            }
+
+
             l4iTemplate.Render({
-                dstid: "htracker-tracer-proc-list",
-                tplid: "htracker-tracer-proc-list-tpl",
+                dstid: "htracker-proj-proclist",
+                tplid: "htracker-proj-proclist-tpl",
                 data: data,
             });
         });
@@ -382,35 +558,34 @@ htrackerTracer.ProcList = function(tid) {
             alert("NetWork error, Please try again later");
         });
 
-        htracker.TplCmd("tracer/proc-list", {
-            callback: ep.done("tpl"),
-        });
+        // htracker.TplCmd("proj/proc-list", {
+        //     callback: ep.done("tpl"),
+        // });
 
 
-        htracker.ApiCmd("tracer/proc-list?" + url, {
+        htracker.ApiCmd("proj/proc-list?" + url, {
             callback: ep.done("data"),
         });
-
     });
 }
 
 
 
-htrackerTracer.procStatsActiveProcId = null;
-htrackerTracer.procStatsActiveProcTime = null;
-htrackerTracer.ProcStats = function(tracer_id, proc_id, proc_time) {
-    htrackerTracer.procStatsActiveProcId = proc_id;
-    htrackerTracer.procStatsActiveProcTime = proc_time;
-    htrackerTracer.NodeStats(null);
+htrackerProj.procStatsActiveProcId = null;
+htrackerProj.procStatsActiveProcTime = null;
+htrackerProj.ProcStats = function(proj_id, proc_id, proc_time) {
+    htrackerProj.procStatsActiveProcId = proc_id;
+    htrackerProj.procStatsActiveProcTime = proc_time;
+    htrackerProj.NodeStats(null);
 }
 
-htrackerTracer.NodeStatsButton = function(obj) {
+htrackerProj.NodeStatsButton = function(obj) {
     $("#htracker-module-navbar-optools").find(".hover").removeClass("hover");
     obj.setAttribute("class", 'hover');
-    htrackerTracer.NodeStats(parseInt(obj.getAttribute('value')));
+    htrackerProj.NodeStats(parseInt(obj.getAttribute('value')));
 }
 
-htrackerTracer.nodeStatsFeedMaxValue = function(feed, names) {
+htrackerProj.nodeStatsFeedMaxValue = function(feed, names) {
     var max = 0;
     var arr = names.split(",");
     for (var i in feed.items) {
@@ -426,27 +601,28 @@ htrackerTracer.nodeStatsFeedMaxValue = function(feed, names) {
     return max;
 }
 
-htrackerTracer.NodeStats = function(time_past) {
+htrackerProj.NodeStats = function(time_past) {
 
     if (time_past) {
-        htrackerTracer.proc_stats_active_past = parseInt(time_past);
-        if (!htrackerTracer.proc_stats_active_past) {
-            htrackerTracer.proc_stats_active_past = 86400;
+        htrackerProj.proc_stats_active_past = parseInt(time_past);
+        if (!htrackerProj.proc_stats_active_past) {
+            htrackerProj.proc_stats_active_past = 86400;
         }
     }
-    if (htrackerTracer.proc_stats_active_past < 600) {
-        htrackerTracer.proc_stats_active_past = 600;
+    if (htrackerProj.proc_stats_active_past < 600) {
+        htrackerProj.proc_stats_active_past = 600;
     }
-    if (htrackerTracer.proc_stats_active_past > (30 * 86400)) {
-        htrackerTracer.proc_stats_active_past = 30 * 86400;
+    if (htrackerProj.proc_stats_active_past > (30 * 86400)) {
+        htrackerProj.proc_stats_active_past = 30 * 86400;
     }
+    htracker.ModuleNavbarLeftClean();
 
-    var stats_url = "proc_id=" + htrackerTracer.procStatsActiveProcId;
-    stats_url += "&proc_time=" + htrackerTracer.procStatsActiveProcTime;
+    var stats_url = "proc_id=" + htrackerProj.procStatsActiveProcId;
+    stats_url += "&proc_time=" + htrackerProj.procStatsActiveProcTime;
 
     var stats_query = {
         tc: 180,
-        tp: htrackerTracer.proc_stats_active_past,
+        tp: htrackerProj.proc_stats_active_past,
         is: [
             {
                 n: "cpu/p"
@@ -524,9 +700,9 @@ htrackerTracer.NodeStats = function(time_past) {
         ww = wlimit;
     }
     if (hh < 800) {
-        htrackerTracer.hchart_def.options.height = "150px";
+        htrackerProj.hchart_def.options.height = "150px";
     } else {
-        htrackerTracer.hchart_def.options.height = "200px";
+        htrackerProj.hchart_def.options.height = "200px";
     }
     if (stats_query.tp > (10 * 86400)) {
         stats_query.tc = 6 * 3600;
@@ -555,11 +731,11 @@ htrackerTracer.NodeStats = function(time_past) {
 
             if (tpl) {
                 $("#htracker-module-content").html(tpl);
-                $(".htracker-tracer-proc-stats-item").css({
+                $(".htracker-proj-procstats-item").css({
                     "flex-basis": ww + "px"
                 });
-                htracker.ModuleNavbarMenuRefresh("htracker-tracer-proc-stats-menus");
-                htracker.OpToolsRefresh("#htracker-tracer-node-optools-stats");
+                htracker.ModuleNavbarMenuRefresh("htracker-proj-procstats-menus");
+                htracker.OpToolsRefresh("#htracker-proj-node-optools-stats");
             }
 
             var max = 0;
@@ -583,25 +759,25 @@ htrackerTracer.NodeStats = function(time_past) {
 
 
             //
-            var stats_cpu = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_cpu = l4i.Clone(htrackerProj.hchart_def);
             stats_cpu.options.title = l4i.T("CPU Usage %");
 
             //
-            var stats_mem = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_mem = l4i.Clone(htrackerProj.hchart_def);
             stats_mem.options.title = l4i.T("Memory Usage (MB)");
             stats_mem._fix = 1024 * 1024;
 
             //
-            var stats_netcc = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_netcc = l4i.Clone(htrackerProj.hchart_def);
             stats_netcc.options.title = l4i.T("Network Connections");
 
             //
-            var stats_netc = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_netc = l4i.Clone(htrackerProj.hchart_def);
             stats_netc.options.title = l4i.T("Network Packets / %s", tc_title);
 
             //
-            var stats_netb = l4i.Clone(htrackerTracer.hchart_def);
-            max = htrackerTracer.nodeStatsFeedMaxValue(stats, "net/rb,net/wb");
+            var stats_netb = l4i.Clone(htrackerProj.hchart_def);
+            max = htrackerProj.nodeStatsFeedMaxValue(stats, "net/rb,net/wb");
             if (max > (1024 * 1024)) {
                 stats_netb.options.title = l4i.T("Network Bytes (MB / %s)", tc_title);
                 stats_netb._fix = 1024 * 1024;
@@ -613,12 +789,12 @@ htrackerTracer.NodeStats = function(time_past) {
             }
 
             //
-            var stats_ioc = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_ioc = l4i.Clone(htrackerProj.hchart_def);
             stats_ioc.options.title = l4i.T("IO Count / %s", tc_title);
 
             //
-            var stats_iob = l4i.Clone(htrackerTracer.hchart_def);
-            max = htrackerTracer.nodeStatsFeedMaxValue(stats, "io/rb,io/wb");
+            var stats_iob = l4i.Clone(htrackerProj.hchart_def);
+            max = htrackerProj.nodeStatsFeedMaxValue(stats, "io/rb,io/wb");
             if (max > (1024 * 1024)) {
                 stats_iob.options.title = l4i.T("IO Bytes (MB / %s)", tc_title);
                 stats_iob._fix = 1024 * 1024;
@@ -630,12 +806,12 @@ htrackerTracer.NodeStats = function(time_past) {
             }
 
             //
-            var stats_iofd = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_iofd = l4i.Clone(htrackerProj.hchart_def);
             stats_iofd.options.title = l4i.T("Number of File Descriptors");
 
 
             //
-            var stats_iotd = l4i.Clone(htrackerTracer.hchart_def);
+            var stats_iotd = l4i.Clone(htrackerProj.hchart_def);
             stats_iotd.options.title = l4i.T("Number of Threads");
 
 
@@ -791,43 +967,44 @@ htrackerTracer.NodeStats = function(time_past) {
                 }
             }
 
-            hooto_chart.RenderElement(stats_cpu, "htracker-tracer-node-stats-cpu");
-            hooto_chart.RenderElement(stats_mem, "htracker-tracer-node-stats-mem");
-            hooto_chart.RenderElement(stats_netcc, "htracker-tracer-node-stats-netcc");
-            hooto_chart.RenderElement(stats_netc, "htracker-tracer-node-stats-netc");
-            hooto_chart.RenderElement(stats_netb, "htracker-tracer-node-stats-netb");
-            hooto_chart.RenderElement(stats_ioc, "htracker-tracer-node-stats-ioc");
-            hooto_chart.RenderElement(stats_iob, "htracker-tracer-node-stats-iob");
-            hooto_chart.RenderElement(stats_iofd, "htracker-tracer-node-stats-iofd");
-            hooto_chart.RenderElement(stats_iotd, "htracker-tracer-node-stats-iotd");
+            hooto_chart.RenderElement(stats_cpu, "htracker-proj-node-stats-cpu");
+            hooto_chart.RenderElement(stats_mem, "htracker-proj-node-stats-mem");
+            hooto_chart.RenderElement(stats_netcc, "htracker-proj-node-stats-netcc");
+            hooto_chart.RenderElement(stats_netc, "htracker-proj-node-stats-netc");
+            hooto_chart.RenderElement(stats_netb, "htracker-proj-node-stats-netb");
+            hooto_chart.RenderElement(stats_ioc, "htracker-proj-node-stats-ioc");
+            hooto_chart.RenderElement(stats_iob, "htracker-proj-node-stats-iob");
+            hooto_chart.RenderElement(stats_iofd, "htracker-proj-node-stats-iofd");
+            hooto_chart.RenderElement(stats_iotd, "htracker-proj-node-stats-iotd");
         });
 
         ep.fail(function(err) {
-            alert("Network Connection Error, Please try again later (EC:htracker-tracer-node)");
+            alert("Network Connection Error, Please try again later (EC:htracker-proj-node)");
         });
 
-        htracker.ApiCmd("tracer/proc-stats?" + stats_url, {
+        htracker.ApiCmd("proj/proc-stats?" + stats_url, {
             callback: ep.done("stats"),
         });
 
-        htracker.TplCmd("tracer/proc-stats", {
+        htracker.TplCmd("proj/proc-stats", {
             callback: ep.done("tpl"),
         });
     });
 }
 
 
-htrackerTracer.ProcDyTraceList = function(tid, pid, pcreated) {
+htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
 
-    if (!tid) {
-        tid = htrackerTracer.entryActiveId;
-        if (!tid) {
+    if (!proj_id) {
+        proj_id = htrackerProj.entryActiveId;
+        if (!proj_id) {
             return;
         }
     }
+    htracker.ModuleNavbarLeftClean();
 
-    var alert_id = "#htracker-tracer-ptrace-list-alert";
-    var url = "tracer_id=" + tid + "&proc_id=" + pid + "&proc_time=" + pcreated + "&limit=20";
+    var alert_id = "#htracker-proj-ptrace-list-alert";
+    var url = "proj_id=" + proj_id + "&proc_id=" + pid + "&proc_time=" + pcreated + "&limit=20";
 
     seajs.use(["ep"], function(EventProxy) {
 
@@ -835,8 +1012,8 @@ htrackerTracer.ProcDyTraceList = function(tid, pid, pcreated) {
 
             if (tpl) {
                 $("#htracker-module-content").html(tpl);
-                htracker.ModuleNavbarMenuRefresh("htracker-tracer-ptrace-list-menus");
-                htracker.OpToolsClean("#htracker-tracer-proc-list-optools");
+                htracker.ModuleNavbarMenuRefresh("htracker-proj-ptrace-list-menus");
+                htracker.OpToolsClean("#htracker-proj-proclist-optools");
             }
 
             if (data.error) {
@@ -852,8 +1029,8 @@ htrackerTracer.ProcDyTraceList = function(tid, pid, pcreated) {
             }
 
             l4iTemplate.Render({
-                dstid: "htracker-tracer-ptrace-list",
-                tplid: "htracker-tracer-ptrace-list-tpl",
+                dstid: "htracker-proj-ptrace-list",
+                tplid: "htracker-proj-ptrace-list-tpl",
                 data: data,
             });
         });
@@ -862,24 +1039,24 @@ htrackerTracer.ProcDyTraceList = function(tid, pid, pcreated) {
             alert("NetWork error, Please try again later");
         });
 
-        htracker.TplCmd("tracer/ptrace-list", {
+        htracker.TplCmd("proj/ptrace-list", {
             callback: ep.done("tpl"),
         });
 
 
-        htracker.ApiCmd("tracer/proc-trace-list?" + url, {
+        htracker.ApiCmd("proj/proc-trace-list?" + url, {
             callback: ep.done("data"),
         });
 
     });
 }
 
-htrackerTracer.flamegraphRender = null;
+htrackerProj.flamegraphRender = null;
 
-htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
+htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
 
-    htrackerTracer.flamegraphRender = null;
-    var url = "tracer_id=" + htrackerTracer.entryActiveId;
+    htrackerProj.flamegraphRender = null;
+    var url = "proj_id=" + htrackerProj.entryActiveId;
     url += "&created=" + created;
     url += "&proc_id=" + pid;
     url += "&proc_time=" + pcreated;
@@ -887,19 +1064,19 @@ htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
 
     l4iModal.Open({
         title: "On-CPU Flame Graph",
-        tplsrc: "<div id='htracker-tracer-flamegraph-body'></div>",
+        tplsrc: "<div id='htracker-proj-flamegraph-body'></div>",
         width: "max",
         height: "max",
         buttons: [{
             title: "Reset Zoom",
-            onclick: "htrackerTracer.ProcDyTraceViewReset()",
+            onclick: "htrackerProj.ProcDyTraceViewReset()",
         }, {
             title: "Close",
             onclick: "l4iModal.Close()",
         }],
         _callback: function() {
 
-            var api_url = h3tracker.api + "/tracer/proc-trace-graph/?" + url;
+            var api_url = htracker.api + "/proj/proc-trace-graph/?" + url;
             api_url += "&svg_w=" + l4iModal.CurOptions.inlet_width;
             api_url += "&svg_h=" + l4iModal.CurOptions.inlet_height;
 
@@ -908,27 +1085,27 @@ htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
             console.log("w " + l4iModal.CurOptions.inlet_width);
             console.log("h " + l4iModal.CurOptions.inlet_height);
 
-            $("#htracker-tracer-flamegraph-body").html(obj);
+            $("#htracker-proj-flamegraph-body").html(obj);
         },
         callback: function() {
 
-            $("#htracker-tracer-flamegraph-body").html("loading ...");
+            $("#htracker-proj-flamegraph-body").html("loading ...");
 
-            htracker.ApiCmd("tracer/proc-trace-graph-burn?" + url, {
+            htracker.ApiCmd("proj/proc-trace-graph-burn?" + url, {
                 callback: function(err, data) {
 
-                    htrackerTracer.flamegraphRender = d3.flamegraph();
+                    htrackerProj.flamegraphRender = d3.flamegraph();
                     if (l4iModal.CurOptions.inlet_width) {
-                        htrackerTracer.flamegraphRender.width(l4iModal.CurOptions.inlet_width);
-                        htrackerTracer.flamegraphRender.height(l4iModal.CurOptions.inlet_height - 5);
+                        htrackerProj.flamegraphRender.width(l4iModal.CurOptions.inlet_width);
+                        htrackerProj.flamegraphRender.height(l4iModal.CurOptions.inlet_height - 5);
                     }
-                    htrackerTracer.flamegraphRender.transitionDuration(300);
-                    htrackerTracer.flamegraphRender.cellHeight(16);
-                    // htrackerTracer.flamegraphRender.minFrameSize(2);
-                    $("#htracker-tracer-flamegraph-body").html("");
-                    d3.select("#htracker-tracer-flamegraph-body")
+                    htrackerProj.flamegraphRender.transitionDuration(300);
+                    htrackerProj.flamegraphRender.cellHeight(16);
+                    // htrackerProj.flamegraphRender.minFrameSize(2);
+                    $("#htracker-proj-flamegraph-body").html("");
+                    d3.select("#htracker-proj-flamegraph-body")
                         .datum(data.graph_burn)
-                        .call(htrackerTracer.flamegraphRender);
+                        .call(htrackerProj.flamegraphRender);
                 },
             });
         },
@@ -938,8 +1115,8 @@ htrackerTracer.ProcDyTraceView = function(pid, pcreated, created) {
 
 
 
-htrackerTracer.ProcDyTraceViewReset = function() {
-    if (htrackerTracer.flamegraphRender) {
-        htrackerTracer.flamegraphRender.resetZoom();
+htrackerProj.ProcDyTraceViewReset = function() {
+    if (htrackerProj.flamegraphRender) {
+        htrackerProj.flamegraphRender.resetZoom();
     }
 }

@@ -26,14 +26,16 @@ import (
 	"github.com/hooto/htracker/hapi"
 )
 
-func (c Tracer) ProcListAction() {
+func (c Proj) ProcListAction() {
 
-	var sets hapi.TracerProcessList
+	var sets hapi.ProjProcList
 	defer c.RenderJson(&sets)
 
 	var (
-		tracer_id = c.Params.Get("tracer_id")
-		limit     = int(c.Params.Int64("limit"))
+		proj_id = c.Params.Get("proj_id")
+		limit   = int(c.Params.Int64("limit"))
+		exit    = c.Params.Get("filter_exit")
+		ptype   = "hit"
 	)
 
 	if limit < 10 {
@@ -42,9 +44,13 @@ func (c Tracer) ProcListAction() {
 		limit = 100
 	}
 
+	if exit == "true" {
+		ptype = "exit"
+	}
+
 	var (
-		offset = hapi.DataPathTracerProcessEntry(tracer_id, 0, 0)
-		cutset = hapi.DataPathTracerProcessEntry(tracer_id, 1, 0)
+		offset = hapi.DataPathProjProcEntry(ptype, proj_id, 0, 0)
+		cutset = hapi.DataPathProjProcEntry(ptype, proj_id, 1, 0)
 	)
 
 	rs := data.Data.KvProgRevScan(offset, cutset, limit)
@@ -53,18 +59,18 @@ func (c Tracer) ProcListAction() {
 	}
 
 	rs.KvEach(func(entry *skv.ResultEntry) int {
-		var set hapi.TracerProcessEntry
+		var set hapi.ProjProcEntry
 		if err := entry.Decode(&set); err == nil {
-			set.Tid = tracer_id
+			set.ProjId = proj_id
 			sets.Items = append(sets.Items, &set)
 		}
 		return 0
 	})
 
-	sets.Kind = "TracerProcessList"
+	sets.Kind = "ProjProcList"
 }
 
-func (c Tracer) ProcStatsAction() {
+func (c Proj) ProcStatsAction() {
 
 	var (
 		proc_id   = uint32(c.Params.Int64("proc_id"))
@@ -103,12 +109,12 @@ func (c Tracer) ProcStatsAction() {
 	feed := hapi.NewPbStatsSampleFeed(fq.TimeCycle)
 
 	if rs := data.Data.KvProgScan(
-		hapi.DataPathTracerProcessStatsEntry(
+		hapi.DataPathProjProcStatsEntry(
 			proc_time,
 			proc_id,
 			fq.TimeStart-fq.TimeCycle-600,
 		),
-		hapi.DataPathTracerProcessStatsEntry(
+		hapi.DataPathProjProcStatsEntry(
 			proc_time,
 			proc_id,
 			fq.TimeCutset+600,
@@ -181,17 +187,17 @@ func (c Tracer) ProcStatsAction() {
 
 }
 
-func (c Tracer) ProcTraceListAction() {
+func (c Proj) ProcTraceListAction() {
 
 	var (
-		tracer_id = c.Params.Get("tracer_id")
+		proj_id   = c.Params.Get("proj_id")
 		proc_id   = uint32(c.Params.Int64("proc_id"))
 		proc_time = uint32(c.Params.Int64("proc_time"))
-		sets      hapi.TracerProcessTraceList
+		sets      hapi.ProjProcTraceList
 	)
 	defer c.RenderJson(&sets)
 
-	if len(tracer_id) < 10 ||
+	if len(proj_id) < 10 ||
 		proc_id < 10 ||
 		proc_time < 100000000 {
 		sets.Error = types.NewErrorMeta("400", "Bad Request")
@@ -199,14 +205,14 @@ func (c Tracer) ProcTraceListAction() {
 	}
 
 	if rs := data.Data.KvProgRevScan(
-		hapi.DataPathTracerProcessTraceEntry(
-			tracer_id,
+		hapi.DataPathProjProcTraceEntry(
+			proj_id,
 			proc_time,
 			proc_id,
 			0,
 		),
-		hapi.DataPathTracerProcessTraceEntry(
-			tracer_id,
+		hapi.DataPathProjProcTraceEntry(
+			proj_id,
 			proc_time,
 			proc_id,
 			0,
@@ -216,7 +222,7 @@ func (c Tracer) ProcTraceListAction() {
 
 		ls := rs.KvList()
 		for _, v := range ls {
-			var item hapi.TracerProcessTraceEntry
+			var item hapi.ProjProcTraceEntry
 			if err := v.Decode(&item); err == nil {
 				item.GraphOnCPU = ""
 				item.GraphBurn = nil
@@ -228,10 +234,10 @@ func (c Tracer) ProcTraceListAction() {
 	sets.Kind = "ProcessTraceList"
 }
 
-func (c Tracer) ProcTraceGraphAction() {
+func (c Proj) ProcTraceGraphAction() {
 
 	var (
-		tracer_id = c.Params.Get("tracer_id")
+		proj_id   = c.Params.Get("proj_id")
 		proc_id   = uint32(c.Params.Int64("proc_id"))
 		proc_time = uint32(c.Params.Int64("proc_time"))
 		created   = uint32(c.Params.Int64("created"))
@@ -263,15 +269,15 @@ func (c Tracer) ProcTraceGraphAction() {
 	*/
 
 	rs := data.Data.KvProgGet(
-		hapi.DataPathTracerProcessTraceEntry(
-			tracer_id,
+		hapi.DataPathProjProcTraceEntry(
+			proj_id,
 			proc_time,
 			proc_id,
 			created,
 		))
 	if rs.OK() {
 
-		var item hapi.TracerProcessTraceEntry
+		var item hapi.ProjProcTraceEntry
 		if err := rs.Decode(&item); err == nil && len(item.GraphOnCPU) > 100 {
 			if n := strings.Index(item.GraphOnCPU, `<svg version=`); n > 0 {
 				item.GraphOnCPU = item.GraphOnCPU[n:]
@@ -292,22 +298,22 @@ func (c Tracer) ProcTraceGraphAction() {
 	c.RenderError(404, "Object Not Found")
 }
 
-func (c Tracer) ProcTraceGraphBurnAction() {
+func (c Proj) ProcTraceGraphBurnAction() {
 
 	var (
-		tracer_id = c.Params.Get("tracer_id")
+		proj_id   = c.Params.Get("proj_id")
 		proc_id   = uint32(c.Params.Int64("proc_id"))
 		proc_time = uint32(c.Params.Int64("proc_time"))
 		created   = uint32(c.Params.Int64("created"))
 	)
 
-	if rs := data.Data.KvProgGet(hapi.DataPathTracerProcessTraceEntry(
-		tracer_id,
+	if rs := data.Data.KvProgGet(hapi.DataPathProjProcTraceEntry(
+		proj_id,
 		proc_time,
 		proc_id,
 		created,
 	)); rs.OK() {
-		var item hapi.TracerProcessTraceEntry
+		var item hapi.ProjProcTraceEntry
 		if err := rs.Decode(&item); err == nil && item.GraphBurn != nil {
 			if n := strings.Index(item.GraphOnCPU, `<svg version=`); n > 0 {
 				item.GraphOnCPU = item.GraphOnCPU[n:]

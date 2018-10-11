@@ -20,28 +20,40 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/lessos/lessgo/encoding/json"
+	"github.com/lessos/lessgo/types"
 	"github.com/lynkdb/iomix/skv"
-	"github.com/shirou/gopsutil/process"
 
 	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
+	"github.com/hooto/htracker/status"
 )
 
 func Start() error {
 
 	var (
-		offset = hapi.DataPathTracerEntry("Z")
-		cutset = hapi.DataPathTracerEntry("")
+		offset = hapi.DataPathProjActiveEntry("Z")
+		cutset = hapi.DataPathProjActiveEntry("")
 		limit  = 100
+		inited = false
 	)
 
 	for {
-		time.Sleep(10e9)
+		if inited {
+			time.Sleep(10e9)
+		} else {
+			inited = true
+		}
+
+		if err := status.ProcListRefresh(); err != nil {
+			hlog.Printf("warn", "proj/proc/refresh err %s", err.Error())
+			continue
+		}
 
 		rs := data.Data.KvRevScan([]byte(offset), []byte(cutset), limit)
 		if !rs.OK() {
@@ -49,10 +61,10 @@ func Start() error {
 		}
 
 		rs.KvEach(func(entry *skv.ResultEntry) int {
-			var set hapi.TracerEntry
+			var set hapi.ProjEntry
 			if err := entry.Decode(&set); err == nil {
-				if err = tracerAction(set); err != nil {
-					hlog.Printf("error", "tracer/action %s, err %s",
+				if err = projAction(set); err != nil {
+					hlog.Printf("error", "proj/action %s, err %s",
 						set.Id, err.Error())
 				} else {
 					// TODO
@@ -66,99 +78,93 @@ func Start() error {
 }
 
 var (
-	procStatsList hapi.TracerProcessList
-	procTraceNum  = 0
+	procTraceNum = 0
 )
 
-func tracerAction(item hapi.TracerEntry) error {
+func projAction(item hapi.ProjEntry) error {
 
-	hlog.Printf("debug", "tracer/action %s",
-		item.Id)
+	hlog.Printf("debug", "proj/action project %s", item.Id)
 
-	ps := []*hapi.TracerProcessEntry{}
+	if item.Closed > 0 {
+		return projRemove(item)
+	}
 
-	if item.Filter.ProcId > 0 {
+	pids := types.ArrayUint32{}
 
-		p, err := process.NewProcess(item.Filter.ProcId)
-		if err != nil {
-			return tracerRemove(item)
-		}
+	if item.Closed < 1 {
 
-		created, _ := p.CreateTime()
-		if uint32(created/1e3) != item.Filter.ProcCreated {
-			return tracerRemove(item)
-		}
+		if item.Filter.ProcId > 0 {
 
-		cmd, _ := p.Cmdline()
-
-		ps = append(ps, &hapi.TracerProcessEntry{
-			Tid:     item.Id,
-			Pid:     p.Pid,
-			Created: uint32(created / 1e3),
-			Cmd:     cmd,
-			Process: p,
-		})
-	} else if item.Filter.ProcName != "" {
-
-		pls, _ := process.Processes()
-		for _, p := range pls {
-
-			if p.Pid < 300 {
-				continue
+			p := status.ProcList.Entry(item.Filter.ProcId, 0)
+			if p == nil {
+				return projRemove(item)
 			}
 
-			name, _ := p.Name()
-			if name != item.Filter.ProcName {
-				continue
+			if p.Created != item.Filter.ProcCreated {
+				return projRemove(item)
 			}
 
-			var (
-				created, _ = p.CreateTime()
-				cmd, _     = p.Cmdline()
-			)
+			pids = append(pids, uint32(p.Pid))
 
-			ps = append(ps, &hapi.TracerProcessEntry{
-				Tid:     item.Id,
-				Pid:     p.Pid,
-				Created: uint32(created / 1e3),
-				Cmd:     cmd,
-				Process: p,
-			})
+		} else if item.Filter.ProcName != "" {
+
+			for _, p := range status.ProcList.Items {
+				if p.Name == item.Filter.ProcName {
+					pids = append(pids, uint32(p.Pid))
+				}
+			}
+
+		} else if item.Filter.ProcCommand != "" {
+
+			for _, p := range status.ProcList.Items {
+				if strings.Contains(p.Cmd, item.Filter.ProcCommand) {
+					pids = append(pids, uint32(p.Pid))
+				}
+			}
 		}
 	}
 
-	for _, p := range ps {
+	for _, pid := range pids {
 
-		if p.Process == nil {
-			continue
-		}
-
-		entry := procStatsList.Entry(p.Pid, p.Created)
+		entry := status.ProcList.Entry(int32(pid), 0)
 		if entry == nil {
-
-			entry = &hapi.TracerProcessEntry{
-				Tid:             p.Tid,
-				Pid:             p.Pid,
-				Created:         p.Created,
-				Cmd:             p.Cmd,
-				StatsSampleFeed: hapi.NewPbStatsSampleFeed(20),
-				Process:         p.Process,
-			}
-
-			procStatsList.Items = append(procStatsList.Items, entry)
-		}
-
-		if err := tracerActionStats(entry); err != nil {
 			continue
 		}
 
-		tracerActionDyTrace(entry)
+		if err := projActionStats(item.Id, entry); err != nil {
+			continue
+		}
+
+		projActionDyTrace(item.Id, entry)
 	}
+
+	var (
+		offset = hapi.DataPathProjProcHitEntry(item.Id, 0, 0)
+		cutset = hapi.DataPathProjProcHitEntry(item.Id, 1, 0)
+		tn     = uint32(time.Now().Unix())
+	)
+
+	rs := data.Data.KvProgRevScan(offset, cutset, 1000)
+	if rs.OK() {
+
+		rs.KvEach(func(entry *skv.ResultEntry) int {
+			var set hapi.ProjProcEntry
+			if err := entry.Decode(&set); err == nil {
+				if !pids.Has(uint32(set.Pid)) {
+					set.Exited = tn
+					projProcEntrySync(item.Id, &set)
+				}
+			}
+			return 0
+		})
+	}
+
+	hlog.Printf("debug", "proj/action hit %d", len(pids))
 
 	return nil
 }
 
-func tracerActionStats(entry *hapi.TracerProcessEntry) error {
+func projActionStats(proj_id string, entry *hapi.ProjProcEntry) error {
 
 	var (
 		tn      = uint32(time.Now().Unix())
@@ -253,7 +259,7 @@ func tracerActionStats(entry *hapi.TracerProcessEntry) error {
 
 	for _, v := range arrs.Items {
 
-		pk := hapi.DataPathTracerProcessStatsEntry(
+		pk := hapi.DataPathProjProcStatsEntry(
 			entry.Created, uint32(entry.Pid),
 			v.Time)
 
@@ -288,28 +294,58 @@ func tracerActionStats(entry *hapi.TracerProcessEntry) error {
 
 	if updated > 0 {
 		entry.Updated = updated
-		tracerActionEntrySync(entry)
+		projProcEntrySync(proj_id, entry)
 		// hapi.ObjPrint(pkey, entry)
 	}
 
 	return nil
 }
 
-func tracerActionEntrySync(entry *hapi.TracerProcessEntry) error {
+func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 
-	pkey := hapi.DataPathTracerProcessEntry(
-		entry.Tid, entry.Created, uint32(entry.Pid))
+	var rs skv.Result
 
-	data.Data.KvProgPut(
-		pkey,
-		skv.NewKvEntry(entry),
-		&skv.KvProgWriteOptions{
-			Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
-			Actions: skv.KvProgOpFoldMeta,
-		},
-	)
+	if entry.Exited > 0 {
+		pkey := hapi.DataPathProjProcExitEntry(
+			proj_id, entry.Created, uint32(entry.Pid))
+		entry.ProjId = proj_id
 
-	return nil
+		rs = data.Data.KvProgPut(
+			pkey,
+			skv.NewKvEntry(entry),
+			&skv.KvProgWriteOptions{
+				Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
+				Actions: skv.KvProgOpFoldMeta,
+			},
+		)
+		if !rs.OK() {
+			return errors.New("database error")
+		}
+		hlog.Printf("info", "Project/Process Exit %s, %d", entry.ProjId, entry.Pid)
+	}
+
+	pkey := hapi.DataPathProjProcHitEntry(
+		proj_id, entry.Created, uint32(entry.Pid))
+
+	if entry.Exited > 0 {
+		rs = data.Data.KvProgDel(pkey, nil)
+	} else {
+		entry.ProjId = proj_id
+		rs = data.Data.KvProgPut(
+			pkey,
+			skv.NewKvEntry(entry),
+			&skv.KvProgWriteOptions{
+				Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
+				Actions: skv.KvProgOpFoldMeta,
+			},
+		)
+		hlog.Printf("debug", "Project/Process Put %s, %d", entry.ProjId, entry.Pid)
+	}
+
+	if rs.OK() {
+		return nil
+	}
+	return errors.New("database error")
 }
 
 type traceCommandEntry struct {
@@ -330,7 +366,7 @@ const (
 	perfRecordRangeSec = uint32(1200)
 )
 
-func tracerActionDyTraceCommands(pid int32, perfPrefix string) []*traceCommandEntry {
+func projActionDyTraceCommands(pid int32, perfPrefix string) []*traceCommandEntry {
 
 	return []*traceCommandEntry{
 		{
@@ -356,7 +392,7 @@ func tracerActionDyTraceCommands(pid int32, perfPrefix string) []*traceCommandEn
 	}
 }
 
-func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
+func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 
 	if procTraceNum > 20 {
 		return nil
@@ -369,13 +405,13 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 		return nil
 	}
 
-	entry.Tracing = &hapi.TracerProcessTraceEntry{
+	entry.Tracing = &hapi.ProjProcTraceEntry{
 		Created: tn,
 	}
 
 	procTraceNum += 1
 
-	go func(entry *hapi.TracerProcessEntry) {
+	go func(proj_id string, entry *hapi.ProjProcEntry) {
 
 		var (
 			perfId = fmt.Sprintf("perf.%d.%d.%d",
@@ -385,7 +421,9 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 			err        error
 		)
 
-		cmds := tracerActionDyTraceCommands(entry.Pid, perfPrefix)
+		// hlog.Printf("debug", "projActionDyTrace %s", perfId)
+
+		cmds := projActionDyTraceCommands(entry.Pid, perfPrefix)
 
 		for _, cmd := range cmds {
 			out, err = exec.Command("/bin/bash", "-c", cmd.Command).Output()
@@ -428,14 +466,14 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 
 			if entry.Tracing.GraphBurn != nil && entry.Tracing.GraphOnCPU != "" {
 
-				entry.Tracing.Tid = entry.Tid
+				entry.Tracing.ProjId = entry.ProjId
 				entry.Tracing.Pid = entry.Pid
 				entry.Tracing.Pcreated = entry.Created
 
 				entry.Tracing.Updated = uint32(time.Now().Unix())
 
-				pkey := hapi.DataPathTracerProcessTraceEntry(
-					entry.Tid, entry.Created, uint32(entry.Pid),
+				pkey := hapi.DataPathProjProcTraceEntry(
+					entry.ProjId, entry.Created, uint32(entry.Pid),
 					entry.Tracing.Created,
 				)
 
@@ -461,7 +499,7 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 
 		entry.Tracing = nil
 
-		tracerActionEntrySync(entry)
+		projProcEntrySync(proj_id, entry)
 
 		procTraceNum -= 1
 
@@ -471,22 +509,54 @@ func tracerActionDyTrace(entry *hapi.TracerProcessEntry) error {
 			}
 		}
 
-	}(entry)
+	}(proj_id, entry)
 
 	return nil
 }
 
-func tracerRemove(item hapi.TracerEntry) error {
+func projRemove(item hapi.ProjEntry) error {
 
 	var (
-		key         = hapi.DataPathTracerEntry(item.Id)
-		key_history = hapi.DataPathTracerEntryHistory(item.Id)
+		offset = hapi.DataPathProjProcHitEntry(item.Id, 0, 0)
+		cutset = hapi.DataPathProjProcHitEntry(item.Id, 1, 0)
+		tn     = uint32(time.Now().Unix())
 	)
-	item.Closed = uint32(time.Now().Unix())
 
-	rs := data.Data.KvPut([]byte(key_history), item, nil)
+	rs := data.Data.KvProgRevScan(offset, cutset, 1000)
 	if rs.OK() {
+
+		rss := rs.KvList()
+
+		hlog.Printf("warn", "Project/Remove %s, N %d", item.Id, len(rss))
+		for _, vset := range rss {
+
+			var set hapi.ProjProcEntry
+			if err := vset.Decode(&set); err != nil {
+				return err
+			}
+
+			set.Exited = tn
+			if err := projProcEntrySync(item.Id, &set); err != nil {
+				return err
+			}
+		}
+	}
+
+	var (
+		key         = hapi.DataPathProjActiveEntry(item.Id)
+		key_history = hapi.DataPathProjHistoryEntry(item.Id)
+	)
+
+	if item.Closed > 0 {
 		rs = data.Data.KvDel([]byte(key))
+	} else {
+
+		item.Closed = tn
+
+		rs := data.Data.KvPut([]byte(key_history), item, nil)
+		if rs.OK() {
+			rs = data.Data.KvDel([]byte(key))
+		}
 	}
 
 	if !rs.OK() {

@@ -21,35 +21,48 @@ import (
 )
 
 func DataPathProjEntry(ptype, id string) string {
-	return fmt.Sprintf("tracer/%s/%s", ptype, id)
+	return fmt.Sprintf("proj/%s/%s", ptype, id)
 }
 
-func DataPathTracerEntry(id string) string {
-	return fmt.Sprintf("tracer/active/%s", id)
+func DataPathProjActiveEntry(id string) string {
+	return fmt.Sprintf("proj/active/%s", id)
 }
 
-func DataPathTracerEntryHistory(id string) string {
-	return fmt.Sprintf("tracer/hist/%s", id)
+func DataPathProjHistoryEntry(id string) string {
+	return fmt.Sprintf("proj/hist/%s", id)
 }
 
-func DataPathTracerProcessEntry(
-	tracer_id string,
+func DataPathProjProcEntry(
+	ptype string,
+	proj_id string,
 	ptime uint32, pid uint32) skv.KvProgKey {
 
 	if ptime < 1 {
 		return skv.NewKvProgKey(
-			"tracer:proc",
-			tracer_id,
+			"proj:p"+ptype,
+			proj_id,
 			"")
 	}
 
 	return skv.NewKvProgKey(
-		"tracer:proc",
-		tracer_id,
+		"proj:p"+ptype,
+		proj_id,
 		Uint32ToHexString(ptime)+Uint32ToHexString(pid))
 }
 
-func DataPathTracerProcessStatsEntry(
+func DataPathProjProcHitEntry(
+	proj_id string,
+	ptime uint32, pid uint32) skv.KvProgKey {
+	return DataPathProjProcEntry("hit", proj_id, ptime, pid)
+}
+
+func DataPathProjProcExitEntry(
+	proj_id string,
+	ptime uint32, pid uint32) skv.KvProgKey {
+	return DataPathProjProcEntry("exit", proj_id, ptime, pid)
+}
+
+func DataPathProjProcStatsEntry(
 	ptime uint32, pid uint32,
 	created uint32) skv.KvProgKey {
 
@@ -59,22 +72,22 @@ func DataPathTracerProcessStatsEntry(
 		Uint32ToHexString(created))
 }
 
-func DataPathTracerProcessTraceEntry(
-	tracer_id string,
+func DataPathProjProcTraceEntry(
+	proj_id string,
 	ptime uint32, pid uint32,
 	created uint32) skv.KvProgKey {
 
 	if created < 1 {
 		return skv.NewKvProgKey(
 			"ptrace",
-			tracer_id,
+			proj_id,
 			Uint32ToHexString(ptime)+Uint32ToHexString(pid),
 			"")
 	}
 
 	return skv.NewKvProgKey(
 		"ptrace",
-		tracer_id,
+		proj_id,
 		Uint32ToHexString(ptime)+Uint32ToHexString(pid),
 		Uint32ToHexString(created))
 }

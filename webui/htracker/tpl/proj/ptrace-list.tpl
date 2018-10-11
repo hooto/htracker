@@ -1,5 +1,5 @@
 
-<div class="htracker-div-container alert less-hide" id="htracker-tracer-ptrace-list-alert"></div>
+<div class="htracker-div-container alert less-hide" id="htracker-proj-ptrace-list-alert"></div>
 
 <div class="htracker-div-light">
     <table class="table table-hover valign-middle">
@@ -11,27 +11,27 @@
         <th style="text-align:right">Flame Graph</th>
       </tr>
       </thead>
-      <tbody id="htracker-tracer-ptrace-list"></tbody>
+      <tbody id="htracker-proj-ptrace-list"></tbody>
     </table>
 </div>
 
-<script type="text/html" id="htracker-tracer-ptrace-list-menus">
+<script type="text/html" id="htracker-proj-ptrace-list-menus">
 <li>
-  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcList()">
+  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerProj.ProcIndex()">
     <span class="icon16 icono-caretLeftCircle"></span>
     Back to Hit Process List</button>
 </li>
 </script>
 
 
-<script type="text/html" id="htracker-tracer-ptrace-list-tpl">
+<script type="text/html" id="htracker-proj-ptrace-list-tpl">
 {[~it.items :v]}
 <tr>
   <td>{[=l4i.UnixTimeFormat(v.created, "Y-m-d H:i:s")]}</td>
   <td>{[=l4i.UnixTimeFormat(v.updated, "Y-m-d H:i:s")]}</td>
   <td>{[=htracker.UtilResSizeFormat(v.perf_size)]}</td>
   <td align="right">
-    <button class="btn btn-primary btn-sm" onclick="htrackerTracer.ProcDyTraceView({[=v.pid]}, {[=v.pcreated]}, {[=v.created]})">On-CPU</button>
+    <button class="btn btn-primary btn-sm" onclick="htrackerProj.ProcDyTraceView({[=v.pid]}, {[=v.pcreated]}, {[=v.created]})">On-CPU</button>
   </td>
 </tr>
 {[~]}

@@ -26,7 +26,7 @@ const (
 	MB int64 = 1024 * 1024
 )
 
-type ProcessEntry struct {
+type ProcEntry struct {
 	types.TypeMeta `json:",inline"`
 	Pid            int32   `json:"pid"`
 	Name           string  `json:"name"`
@@ -38,23 +38,24 @@ type ProcessEntry struct {
 	Status         string  `json:"status"`
 }
 
-type ProcessList struct {
-	mu      sync.Mutex
-	Num     int             `json:"num"`
-	Total   int             `json:"total"`
-	Items   []*ProcessEntry `json:"items"`
-	Updated uint32          `json:"updated"`
+type ProcList struct {
+	types.TypeMeta `json:",inline"`
+	mu             sync.Mutex
+	Num            int          `json:"num"`
+	Total          int          `json:"total"`
+	Items          []*ProcEntry `json:"items"`
+	Updated        uint32       `json:"updated"`
 }
 
-func (it *ProcessList) Clean() {
+func (it *ProcList) Clean() {
 
 	it.mu.Lock()
 	defer it.mu.Unlock()
 
-	it.Items = []*ProcessEntry{}
+	it.Items = []*ProcEntry{}
 }
 
-func (it *ProcessList) Entry(pid int32) *ProcessEntry {
+func (it *ProcList) Entry(pid int32) *ProcEntry {
 
 	it.mu.Lock()
 	defer it.mu.Unlock()
@@ -65,7 +66,7 @@ func (it *ProcessList) Entry(pid int32) *ProcessEntry {
 		}
 	}
 
-	p := &ProcessEntry{
+	p := &ProcEntry{
 		Pid: pid,
 	}
 	it.Items = append(it.Items, p)
@@ -86,7 +87,7 @@ func Float64Round(f float64, n int) float64 {
 	return float64(int64(f*nfix+0.5)) / nfix
 }
 
-type TracerFilter struct {
+type ProjFilter struct {
 	ProcId      int32  `json:"proc_id,omitempty"`
 	ProcName    string `json:"proc_name,omitempty"`
 	ProcCommand string `json:"proc_cmd,omitempty"`
@@ -97,61 +98,119 @@ const (
 	OpActionDelete uint64 = 1 << 3
 )
 
-type TracerEntry struct {
+type ProjEntry struct {
 	types.TypeMeta `json:",inline"`
-	Id             string       `json:"id"`
-	Name           string       `json:"name"`
-	Filter         TracerFilter `json:"filter"`
-	Action         uint64       `json:"action"`
-	Created        uint32       `json:"created"`
-	Closed         uint32       `json:"closed"`
-	ProcNum        int          `json:"proc_num,omitempty"`
+	Id             string     `json:"id"`
+	Name           string     `json:"name"`
+	Filter         ProjFilter `json:"filter"`
+	Action         uint64     `json:"action"`
+	Created        uint32     `json:"created"`
+	Closed         uint32     `json:"closed"`
+	ProcNum        int        `json:"proc_num,omitempty"`
+	Comment        string     `json:"comment,omitempty"`
 }
 
-func NewTracerEntry() *TracerEntry {
-	set := &TracerEntry{
+func NewProjEntry() *ProjEntry {
+	set := &ProjEntry{
 		Created: uint32(time.Now().Unix()),
 	}
 	set.Id = ObjectId(set.Created, 8)
 	return set
 }
 
-type TracerList struct {
+type ProjList struct {
 	mu             sync.Mutex
 	types.TypeMeta `json:",inline"`
-	Items          []*TracerEntry `json:"items,omitempty"`
+	Items          []*ProjEntry `json:"items,omitempty"`
 }
 
-type TracerProcessEntry struct {
-	Tid             string                   `json:"tid,omitempty"`
-	Pid             int32                    `json:"pid"`
-	Created         uint32                   `json:"created"`
-	Updated         uint32                   `json:"updated"`
-	Cmd             string                   `json:"cmd,omitempty"`
-	Traced          uint32                   `json:"traced"`
-	Process         *process.Process         `json:"-"`
-	StatsSampleFeed *PbStatsSampleFeed       `json:"-"`
-	Tracing         *TracerProcessTraceEntry `json:"-"`
+type ProjProcEntry struct {
+	ProjId          string              `json:"proj_id,omitempty"`
+	Pid             int32               `json:"pid"`
+	Created         uint32              `json:"created"`
+	Updated         uint32              `json:"updated"`
+	Name            string              `json:"name,omitempty"`
+	Cmd             string              `json:"cmd,omitempty"`
+	Traced          uint32              `json:"traced"`
+	Exited          uint32              `json:"exited,omitempty"`
+	Process         *process.Process    `json:"-"`
+	StatsSampleFeed *PbStatsSampleFeed  `json:"-"`
+	Tracing         *ProjProcTraceEntry `json:"-"`
 }
 
-type TracerProcessList struct {
+type ProjProcList struct {
 	mu             sync.Mutex
 	types.TypeMeta `json:",inline"`
-	Items          []*TracerProcessEntry `json:"items,omitempty"`
+	Items          []*ProjProcEntry `json:"items,omitempty"`
 }
 
-func (it *TracerProcessList) Entry(pid int32, tn uint32) *TracerProcessEntry {
+func (it *ProjProcList) Entry(pid int32, tn uint32) *ProjProcEntry {
 
 	it.mu.Lock()
 	defer it.mu.Unlock()
 
 	for _, v := range it.Items {
-		if pid == v.Pid && tn == v.Created {
-			return v
+		if pid == v.Pid {
+			if tn == 0 || tn == v.Created {
+				if v.StatsSampleFeed == nil {
+					v.StatsSampleFeed = NewPbStatsSampleFeed(20)
+				}
+				return v
+			}
+			break
 		}
 	}
 
 	return nil
+}
+
+func (it *ProjProcList) Del(pid int32, tn uint32) {
+
+	it.mu.Lock()
+	defer it.mu.Unlock()
+
+	for i, v := range it.Items {
+		if pid == v.Pid && tn == v.Created {
+			it.Items = append(it.Items[:i], it.Items[i+1:]...)
+			return
+		}
+	}
+}
+
+func (it *ProjProcList) Set(entry *ProjProcEntry) {
+
+	it.mu.Lock()
+	defer it.mu.Unlock()
+
+	for i, v := range it.Items {
+		if entry.Pid == v.Pid {
+			if entry.ProjId != "" {
+				it.Items[i].ProjId = entry.ProjId
+			}
+			if entry.Created > 0 {
+				it.Items[i].Created = entry.Created
+			}
+			if entry.Process != nil {
+				it.Items[i].Process = entry.Process
+			}
+			if entry.Name != "" {
+				it.Items[i].Name = entry.Name
+			}
+			if entry.Cmd != "" {
+				it.Items[i].Cmd = entry.Cmd
+			}
+			if it.Items[i].StatsSampleFeed == nil {
+				it.Items[i].StatsSampleFeed = NewPbStatsSampleFeed(20)
+			}
+			return
+		}
+	}
+
+	if entry.StatsSampleFeed == nil {
+		entry.StatsSampleFeed = NewPbStatsSampleFeed(20)
+	}
+
+	it.Items = append(it.Items, entry)
 }
 
 type FlameGraphBurnNode struct {
@@ -165,8 +224,8 @@ type FlameGraphBurnProfile struct {
 	Stack              []string `json:"stack"`
 }
 
-type TracerProcessTraceEntry struct {
-	Tid        string                 `json:"tid"`
+type ProjProcTraceEntry struct {
+	ProjId     string                 `json:"proj_id"`
 	Pid        int32                  `json:"pid"`
 	Pcreated   uint32                 `json:"pcreated"`
 	Created    uint32                 `json:"created"`
@@ -176,7 +235,7 @@ type TracerProcessTraceEntry struct {
 	GraphBurn  *FlameGraphBurnProfile `json:"graph_burn,omitempty"`
 }
 
-type TracerProcessTraceList struct {
+type ProjProcTraceList struct {
 	types.TypeMeta `json:",inline"`
-	Items          []*TracerProcessTraceEntry `json:"items,omitempty"`
+	Items          []*ProjProcTraceEntry `json:"items,omitempty"`
 }

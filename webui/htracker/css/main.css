@@ -28,7 +28,7 @@ body {
 }
 
 .htracker-modal-container .row {
-  margin: 0;
+  margin: 0 0 15px 0;
 }
 
 .htracker-modal-container .col-form-label {
@@ -61,6 +61,15 @@ body {
   display: block;
 }
 
+#htracker-module-navbar li,
+#htracker-module-navbar button {
+  height: 30px;
+}
+
+#htracker-module-navbar li:last-child {
+  margin-right: 0;
+}
+
 #htracker-module-navbar form {
   margin-bottom: 0 !important;
 }
@@ -71,6 +80,10 @@ body {
 
 #body-content {
   background-color: #f5f5f5;
+}
+
+#body-content .navbar-brand {
+  font-size: 1.2em;
 }
 
 #htracker-module-layout>#htracker-module-navbar {
@@ -85,6 +98,10 @@ body {
 #htracker-module-layout button .icon16 {
   zoom: 55%;
   margin: 0 5px 2px -5px;
+}
+
+#htracker-module-layout .alert {
+  margin-bottom: 10px;
 }
 
 .htracker-module-nav {
@@ -233,7 +250,7 @@ body {
   vertical-align: middle !important;
 }
 
-.htracker-tracer-proc-stats-item {
+.htracker-proj-procstats-item {
   position: relative;
   overflow: hidden;
   padding: 5px 10px;
@@ -242,7 +259,7 @@ body {
   text-align: center;
 }
 
-.htracker-tracer-proc-stats-item:empty {
+.htracker-proj-procstats-item:empty {
   padding: 0;
   margin: 1px 10px;
   height: 0;

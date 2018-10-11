@@ -52,8 +52,8 @@ h3tracker.Boot = function() {
             "~/bs/4/js/bootstrap.js",
             "~/lessui/js/lessui.js" + h3tracker.urlver(),
             "~/lessui/css/lessui.css" + h3tracker.urlver(),
-            "~/htracker/js/process.js" + h3tracker.urlver(),
-            "~/htracker/js/tracer.js" + h3tracker.urlver(),
+            "~/htracker/js/proc.js" + h3tracker.urlver(),
+            "~/htracker/js/proj.js" + h3tracker.urlver(),
             "~/hchart/hchart.js",
             "~/d3/d3.v4.js",
             "~/d3-tip/d3-tip.js",
@@ -72,8 +72,8 @@ h3tracker.Boot = function() {
                 }, 1000);
             }
 
-            l4i.UrlEventRegister("process/index", htrackerProcess.Index, "htracker-nav");
-            l4i.UrlEventRegister("tracer/index", htrackerTracer.Index, "htracker-nav");
+            l4i.UrlEventRegister("proc/index", htrackerProc.Index, "htracker-nav");
+            l4i.UrlEventRegister("proj/index", htrackerProj.Index, "htracker-nav");
 
             l4iTemplate.Render({
                 dstid: "body-content",
@@ -82,7 +82,7 @@ h3tracker.Boot = function() {
                     version: h3tracker.version,
                 },
                 callback: function() {
-                    l4i.UrlEventHandler("tracer/index", true);
+                    l4i.UrlEventHandler("proj/index", true);
                 },
             });
         });
@@ -243,6 +243,7 @@ h3tracker.ModuleNavbarMenu = function(name, items, active) {
         h3tracker.module_navbar_menu_active = null;
     }
 
+    h3tracker.ModuleNavbarMenuClean();
 
     var html = "";
     for (var i in items) {
@@ -285,6 +286,33 @@ h3tracker.ModuleNavbarMenuRefresh = function(div_target, cb) {
     }
 }
 
+
+h3tracker.ModuleNavbarLeftRefresh = function(div_target, cb) {
+    if (!div_target) {
+        return;
+    }
+
+    var elem = document.getElementById(div_target);
+    if (!elem) {
+        return;
+    }
+    var elemto = document.getElementById("htracker-module-navbar-left");
+    if (!elemto) {
+        $("#htracker-module-navbar").prepend("<ul id='htracker-module-navbar-left' class='htracker-module-nav'></ul>");
+    }
+
+    $("#htracker-module-navbar-left").html(elem.innerHTML);
+
+    if (cb && typeof cb === "function") {
+        cb(null);
+    }
+}
+
+h3tracker.ModuleNavbarLeftClean = function() {
+    $("#htracker-module-navbar-left").hide(100, function() {
+        $("#htracker-module-navbar-left").remove();
+    });
+}
 
 h3tracker.OpToolsRefresh = function(div_target, cb) {
     if (!div_target) {
