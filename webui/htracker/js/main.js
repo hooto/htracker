@@ -54,7 +54,7 @@ h3tracker.Boot = function() {
             "~/lessui/css/lessui.css" + h3tracker.urlver(),
             "~/htracker/js/proc.js" + h3tracker.urlver(),
             "~/htracker/js/proj.js" + h3tracker.urlver(),
-            "~/hchart/hchart.js",
+            "~/hchart/hchart.js" + h3tracker.urlver(),
             "~/d3/d3.v4.js",
             "~/d3-tip/d3-tip.js",
             "~/d3-flamegraph/d3-flamegraph.js",

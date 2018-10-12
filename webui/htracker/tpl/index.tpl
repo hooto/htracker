@@ -28,6 +28,6 @@
 
 <div class="htracker-body-footer">
   <span>© 2018 <a href="https://github.com/hooto/htracker" target="_blank">hooto tracker {[=it.version]}</a>
-  &nbsp; is an open source application performance management</span>
+  &nbsp; is a web visualization and analysis tool for APM (application performance management)</span>
 </div>
 

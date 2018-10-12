@@ -28,7 +28,7 @@ import (
 
 var (
 	Prefix      = "/opt/hooto/tracker"
-	Version     = "0.1.1"
+	Version     = "0.1.2"
 	Release     = "1"
 	VersionHash = Version // TODO
 	err         error
@@ -57,13 +57,11 @@ func Setup(version, release string) error {
 		}
 	}
 
+	VersionHash = Version + "-" + Release
+
 	hlog.Printf("info", "version %s, release %s", Version, Release)
 
-	prefix := ""
-
-	if v, ok := hflag.Value("prefix"); ok {
-		prefix = v.String()
-	}
+	prefix := hflag.Value("prefix").String()
 
 	if prefix == "" {
 		prefix, _ = filepath.Abs(filepath.Dir(os.Args[0]) + "/")

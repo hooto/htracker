@@ -1,6 +1,6 @@
-# hooto tracker
+# About
 
-hooto tracker is a web based visualization and analysis tool for APM (application performance management).
+hooto tracker is a web visualization and analysis tool for APM (application performance management).
 
 
 ## CentOS 7.x

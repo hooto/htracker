@@ -52,11 +52,11 @@
   <td align="right">
     <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcDyTraceList('{[=v.proj_id]}', {[=v.pid]}, {[=v.created]})">
       <i class="icon16 icono-barChart"></i>
-	  Dynamic Trace
-	</button>
+      Dynamic Trace
+    </button>
     <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcStats('{[=v.proj_id]}', {[=v.pid]}, {[=v.created]})">
       <i class="icon16 icono-areaChart"></i>
-	  Resource Usage
+      Resource Usage
     </button>
   </td>
 </tr>

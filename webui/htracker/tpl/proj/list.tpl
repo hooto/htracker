@@ -46,8 +46,8 @@
     {[if (v.proc_num > 0 || it._history) {]}
       {[=v.proc_num]}
     {[} else {]}
-	  waiting
-	{[}]}
+      waiting
+    {[}]}
   </td>
   <td align="right">
     <i class="icono-caretRight" style="zoom: 85%; margin:0;"></i>

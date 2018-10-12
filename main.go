@@ -16,7 +16,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/hooto/hlog4g/hlog"
 	"github.com/hooto/httpsrv"
 
 	"github.com/hooto/htracker/config"
@@ -33,6 +37,13 @@ var (
 
 func main() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			hlog.Printf("fatal", "Server/Panic %s", err)
+		}
+		hlog.Flush()
+	}()
+
 	if err := config.Setup(version, release); err != nil {
 		fmt.Println(err)
 		return
@@ -45,18 +56,35 @@ func main() {
 
 	go worker.Start()
 
-	hs := httpsrv.NewService()
+	var (
+		hs   = httpsrv.NewService()
+		quit = make(chan os.Signal, 2)
+	)
 
 	// register module to httpsrv
 	hs.ModuleRegister("/htracker/v1", v1.NewModule())
-	hs.ModuleRegister("/htracker/~/hchart",
-		httpsrv.NewStaticModule("hchart_ui", config.Prefix+"/webui/hchart/webui"))
 	hs.ModuleRegister("/htracker", frontend.NewModule())
 	hs.ModuleRegister("/", frontend.NewModule())
 
 	// start
 	hs.Config.HttpPort = config.Config.HttpPort
-	if err := hs.Start(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := hs.Start(); err != nil {
+			hlog.Printf("fatal", "Server/Start Fatal: %s", err.Error())
+			quit <- syscall.SIGQUIT
+		}
+	}()
+
+	//
+	signal.Notify(quit,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+		syscall.SIGKILL)
+	sg := <-quit
+
+	data.Data.Close()
+
+	hlog.Printf("warn", "Signal Quit: %s", sg.String())
 }

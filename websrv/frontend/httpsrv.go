@@ -26,6 +26,12 @@ func NewModule() httpsrv.Module {
 
 	module.RouteSet(httpsrv.Route{
 		Type:       httpsrv.RouteTypeStatic,
+		Path:       "~/hchart",
+		StaticPath: config.Prefix + "/webui/hchart/webui",
+	})
+
+	module.RouteSet(httpsrv.Route{
+		Type:       httpsrv.RouteTypeStatic,
 		Path:       "~",
 		StaticPath: config.Prefix + "/webui",
 	})

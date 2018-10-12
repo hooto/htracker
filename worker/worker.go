@@ -34,6 +34,10 @@ import (
 	"github.com/hooto/htracker/status"
 )
 
+var (
+	ttlLimit int = 30 // days
+)
+
 func Start() error {
 
 	var (
@@ -283,7 +287,7 @@ func projActionStats(proj_id string, entry *hapi.ProjProcEntry) error {
 				pk,
 				skv.NewKvEntry(prev),
 				&skv.KvProgWriteOptions{
-					Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
+					Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
 					Actions: skv.KvProgOpFoldMeta,
 				},
 			)
@@ -314,14 +318,14 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 			pkey,
 			skv.NewKvEntry(entry),
 			&skv.KvProgWriteOptions{
-				Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
+				Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
 				Actions: skv.KvProgOpFoldMeta,
 			},
 		)
 		if !rs.OK() {
 			return errors.New("database error")
 		}
-		hlog.Printf("info", "Project/Process Exit %s, %d", entry.ProjId, entry.Pid)
+		hlog.Printf("debug", "Project/Process Exit %s, %d", entry.ProjId, entry.Pid)
 	}
 
 	pkey := hapi.DataPathProjProcHitEntry(
@@ -335,7 +339,7 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 			pkey,
 			skv.NewKvEntry(entry),
 			&skv.KvProgWriteOptions{
-				Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
+				Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
 				Actions: skv.KvProgOpFoldMeta,
 			},
 		)
@@ -425,26 +429,35 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 
 		cmds := projActionDyTraceCommands(entry.Pid, perfPrefix)
 
+		json_ok := true // FlameGraph to JSON in not stable right now
+
 		for _, cmd := range cmds {
 			out, err = exec.Command("/bin/bash", "-c", cmd.Command).Output()
 			cmd.Done = true
-			if err != nil {
-				hlog.Printf("error", "failed to trace %s, err %s, out %s, cmd %s",
-					perfId, err.Error(), string(out), cmd.Command)
-				break
+			if cmd.CleanFile == ".data" {
+				if fst, err := os.Stat(perfPrefix + cmd.CleanFile); err == nil {
+					entry.Tracing.PerfSize = uint32(fst.Size())
+				}
 			}
-			hlog.Printf("debug", "OK %s", cmd.Command)
+			if err != nil {
+				hlog.Printf("error", "failed to exec %s, err %s, out %s, lfile %d, cmd %s",
+					perfId, err.Error(), string(out), entry.Tracing.PerfSize, cmd.Command)
+				if cmd.CleanFile == ".json" {
+					json_ok, err = false, nil
+				} else {
+					break
+				}
+			}
+			hlog.Printf("debug", "OK lfile %d, cmd %s", entry.Tracing.PerfSize, cmd.Command)
 		}
 
 		if err == nil {
 
-			if fst, err := os.Stat(perfPrefix + ".data"); err == nil {
-				entry.Tracing.PerfSize = uint32(fst.Size())
-			}
-
-			var gitem hapi.FlameGraphBurnProfile
-			if err = json.DecodeFile(perfPrefix+".json", &gitem); err == nil {
-				entry.Tracing.GraphBurn = &gitem
+			if json_ok {
+				var gitem hapi.FlameGraphBurnProfile
+				if err = json.DecodeFile(perfPrefix+".json", &gitem); err == nil {
+					entry.Tracing.GraphBurn = &gitem
+				}
 			}
 
 			if err == nil {
@@ -464,7 +477,7 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 				}
 			}
 
-			if entry.Tracing.GraphBurn != nil && entry.Tracing.GraphOnCPU != "" {
+			if entry.Tracing.GraphOnCPU != "" {
 
 				entry.Tracing.ProjId = entry.ProjId
 				entry.Tracing.Pid = entry.Pid
@@ -481,14 +494,14 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 					pkey,
 					skv.NewKvEntry(entry.Tracing),
 					&skv.KvProgWriteOptions{
-						Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
+						Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
 						Actions: skv.KvProgOpFoldMeta,
 					},
 				)
 
 				entry.Traced = uint32(time.Now().Unix())
 
-				hlog.Printf("info", "trace %s in %d s", perfId,
+				hlog.Printf("debug", "trace %s in %d s", perfId,
 					entry.Tracing.Updated-entry.Tracing.Created,
 				)
 

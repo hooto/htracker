@@ -76,12 +76,11 @@ htrackerProj.ListRefreshHistory = function() {
 
 htrackerProj.ListRefresh = function(list_active) {
 
-    htrackerProj.entryActiveId = null;
-
     var elem = document.getElementById("htracker-projlist");
     if (!elem) {
         return;
     }
+
     var url = "limit=20";
     var elemq = document.getElementById("htracker-projlist-query");
     if (elemq && elemq.value.length > 0) {
@@ -151,6 +150,7 @@ htrackerProj.ListRefresh = function(list_active) {
                 data: data,
             });
             l4i.InnerAlert(alert_id);
+            htrackerProj.entryActiveId = null;
 
             if (waiting && list_active == "proj/list/active" && !htrackerProj.listAutoRefreshTimer) {
                 htrackerProj.listAutoRefreshTimer = window.setTimeout(function() {
@@ -443,13 +443,18 @@ htrackerProj.ProcIndex = function(proj_id) {
 
     if (!proj_id) {
         proj_id = htrackerProj.entryActiveId;
+        if (!proj_id) {
+            proj_id = l4iSession.Get("htproj_active_id");
+        }
     } else {
         htrackerProj.entryActiveId = proj_id;
     }
 
     if (!proj_id) {
+        console.log("ProjId Not Setup");
         return;
     }
+    l4iSession.Set("htproj_active_id", proj_id);
 
     if (!htrackerProj.procListMenuActive) {
         htrackerProj.procListMenuActive = "proj/proc/hit";
@@ -485,15 +490,19 @@ htrackerProj.ProcList = function(proj_id, list_active) {
 
     if (!proj_id) {
         proj_id = htrackerProj.entryActiveId;
+        if (!proj_id) {
+            proj_id = l4iSession.Get("htproj_active_id");
+        }
     } else {
         htrackerProj.entryActiveId = proj_id;
     }
 
     if (!proj_id) {
+        console.log("ProjId Not Setup");
         return;
     }
     var alert_id = "#htracker-proj-proclist-alert";
-    var url = "proj_id=" + proj_id + "&limit=20";
+    var url = "proj_id=" + proj_id + "&limit=50";
 
     if (htrackerProj.listMenuActive == "proj/list/history") {
         list_active = "proj/proc/exit";
@@ -998,13 +1007,16 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
     if (!proj_id) {
         proj_id = htrackerProj.entryActiveId;
         if (!proj_id) {
-            return;
+            proj_id = l4iSession.Get("htproj_active_id");
+            if (!proj_id) {
+                return;
+            }
         }
     }
     htracker.ModuleNavbarLeftClean();
 
     var alert_id = "#htracker-proj-ptrace-list-alert";
-    var url = "proj_id=" + proj_id + "&proc_id=" + pid + "&proc_time=" + pcreated + "&limit=20";
+    var url = "proj_id=" + proj_id + "&proc_id=" + pid + "&proc_time=" + pcreated + "&limit=50";
 
     seajs.use(["ep"], function(EventProxy) {
 
@@ -1052,8 +1064,13 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
 }
 
 htrackerProj.flamegraphRender = null;
+htrackerProj.flamegraphRenderType = "svg";
 
 htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
+
+    if (!htrackerProj.entryActiveId) {
+        htrackerProj.entryActiveId = l4iSession.Get("htproj_active_id");
+    }
 
     htrackerProj.flamegraphRender = null;
     var url = "proj_id=" + htrackerProj.entryActiveId;
@@ -1061,53 +1078,74 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
     url += "&proc_id=" + pid;
     url += "&proc_time=" + pcreated;
 
+    var api_svg = htracker.api + "/proj/proc-trace-graph/?" + url;
+
+
+    var buttons = [{
+        title: "Open in new tab",
+        href: api_svg,
+    }];
+
+    if (htrackerProj.flamegraphRenderType == "js") {
+        buttons.push({
+            title: "Reset Zoom",
+            onclick: "htrackerProj.ProcDyTraceViewReset()",
+        });
+    }
+    buttons.push({
+        title: "Close",
+        onclick: "l4iModal.Close()",
+    });
+
+
 
     l4iModal.Open({
         title: "On-CPU Flame Graph",
         tplsrc: "<div id='htracker-proj-flamegraph-body'></div>",
         width: "max",
         height: "max",
-        buttons: [{
-            title: "Reset Zoom",
-            onclick: "htrackerProj.ProcDyTraceViewReset()",
-        }, {
-            title: "Close",
-            onclick: "l4iModal.Close()",
-        }],
-        _callback: function() {
-
-            var api_url = htracker.api + "/proj/proc-trace-graph/?" + url;
-            api_url += "&svg_w=" + l4iModal.CurOptions.inlet_width;
-            api_url += "&svg_h=" + l4iModal.CurOptions.inlet_height;
-
-            var obj = l4i.T('<object data="%s" type="image/svg+xml" width="%d" height="%d"></object>',
-                api_url, l4iModal.CurOptions.inlet_width, l4iModal.CurOptions.inlet_height - 5);
-            console.log("w " + l4iModal.CurOptions.inlet_width);
-            console.log("h " + l4iModal.CurOptions.inlet_height);
-
-            $("#htracker-proj-flamegraph-body").html(obj);
-        },
+        buttons: buttons,
         callback: function() {
 
             $("#htracker-proj-flamegraph-body").html("loading ...");
 
-            htracker.ApiCmd("proj/proc-trace-graph-burn?" + url, {
-                callback: function(err, data) {
+            if (htrackerProj.flamegraphRenderType == "svg") {
 
-                    htrackerProj.flamegraphRender = d3.flamegraph();
-                    if (l4iModal.CurOptions.inlet_width) {
-                        htrackerProj.flamegraphRender.width(l4iModal.CurOptions.inlet_width);
-                        htrackerProj.flamegraphRender.height(l4iModal.CurOptions.inlet_height - 5);
-                    }
-                    htrackerProj.flamegraphRender.transitionDuration(300);
-                    htrackerProj.flamegraphRender.cellHeight(16);
-                    // htrackerProj.flamegraphRender.minFrameSize(2);
-                    $("#htracker-proj-flamegraph-body").html("");
-                    d3.select("#htracker-proj-flamegraph-body")
-                        .datum(data.graph_burn)
-                        .call(htrackerProj.flamegraphRender);
-                },
-            });
+                var api_url = htracker.api + "/proj/proc-trace-graph/?" + url;
+
+                var obj = l4i.T('<object data="%s" type="image/svg+xml" width="%d" height="%d"></object>',
+                    api_svg, l4iModal.CurOptions.inlet_width, l4iModal.CurOptions.inlet_height - 5);
+                    // console.log("w " + l4iModal.CurOptions.inlet_width);
+                    // console.log("h " + l4iModal.CurOptions.inlet_height);
+
+                $("#htracker-proj-flamegraph-body").html(obj);
+            }
+
+            if (htrackerProj.flamegraphRenderType == "js") {
+
+
+                htracker.ApiCmd("proj/proc-trace-graph-burn?" + url, {
+                    callback: function(err, data) {
+                        if (err || data.error) {
+                            return; // TODO
+                        }
+
+                        htrackerProj.flamegraphRender = d3.flamegraph();
+                        if (l4iModal.CurOptions.inlet_width) {
+                            htrackerProj.flamegraphRender.width(l4iModal.CurOptions.inlet_width);
+                            htrackerProj.flamegraphRender.height(l4iModal.CurOptions.inlet_height - 5);
+                        }
+                        htrackerProj.flamegraphRender.transitionDuration(300);
+                        htrackerProj.flamegraphRender.cellHeight(16);
+                        // htrackerProj.flamegraphRender.minFrameSize(2);
+                        $("#htracker-proj-flamegraph-body").html("");
+                        d3.select("#htracker-proj-flamegraph-body")
+                            .datum(data.graph_burn)
+                            .call(htrackerProj.flamegraphRender);
+                    },
+                });
+
+            }
         },
     });
 }
