@@ -233,7 +233,7 @@ htrackerProj.NewEntrySelector = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Project Settings",
+        title: "New Project",
         tpluri: htracker.TplPath("proj/entry-new-selector"),
         width: 900,
         height: 450,
@@ -253,7 +253,7 @@ htrackerProj.NewEntryProcId = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Project Settings",
+        title: "Filter by Process ID",
         data: {
             name: "",
             filter: options.filter,
@@ -281,7 +281,7 @@ htrackerProj.NewEntryProcName = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Project Settings",
+        title: "Filter by Process Name",
         data: {
             name: "",
             filter: options.filter,
@@ -309,7 +309,7 @@ htrackerProj.NewEntryProcCommand = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Project Settings",
+        title: "Filter by Process Command line content",
         data: {
             name: "",
             filter: options.filter,
