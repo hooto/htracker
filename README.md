@@ -5,10 +5,11 @@ hooto tracker is a web frontend visualization and analysis tool for APM (applica
 ## Features
 
 * Compatible with Linux systems
-* No need to modify the analyzed application code
-* Continuous tracking and saving, history traceable
-* Resource Usage capture and charts (CPU, Memory, IO, ...)
-* Dynamic Trace capture and graphs (On-CPU, ...)
+* Probe point based on process, no need to modify the analyzed application's code
+* Continuous tracking and state saving
+* Historical rollup of all data (default setup in 30 days)
+* Resource Usage capture and charts (CPU, Memory, Network, IO, ...)
+* Dynamic Trace capture and graphs (On-CPU, Off-CPU, Memory, ...)
 
 # Install
 
@@ -19,11 +20,30 @@ todo ...
 ``` shell
 sudo yum install -y perf
 ```
-## ubuntu 18.04
+## Ubuntu 18.04
 
 ``` shell
 sudo apt install linux-tools-commom linux-tools-generic
 ```
+
+## Source
+
+``` shell
+# pull source code
+git clone https://github.com/hooto/htracker.git
+cd htracker
+git submodule update
+
+# build
+make
+sudo make install
+
+# setup service, and start
+systemctl enable hooto-tracker
+systemctl start hooto-tracker
+```
+
+## Setup
 
 # Getting Started
 
