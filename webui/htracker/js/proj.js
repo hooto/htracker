@@ -45,6 +45,8 @@ var htrackerProj = {
         uri: "proj/proc/exit",
     }],
     procListMenuActive: null,
+    procTraceListOffset: 0,
+    procTraceListLimit: 100,
 }
 
 htrackerProj.Index = function() {
@@ -1002,7 +1004,10 @@ htrackerProj.NodeStats = function(time_past) {
 }
 
 
-htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
+htrackerProj.procDyTraceListProcId = 0;
+htrackerProj.procDyTraceListProcTime = 0;
+
+htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
 
     if (!proj_id) {
         proj_id = htrackerProj.entryActiveId;
@@ -1013,10 +1018,20 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
             }
         }
     }
+
+    htrackerProj.procDyTraceListProcId = pid;
+    htrackerProj.procDyTraceListProcTime = pcreated;
+
+    options = options || {};
+
     htracker.ModuleNavbarLeftClean();
 
     var alert_id = "#htracker-proj-ptrace-list-alert";
-    var url = "proj_id=" + proj_id + "&proc_id=" + pid + "&proc_time=" + pcreated + "&limit=50";
+    var url = "proj_id=" + proj_id + "&proc_id=" + pid;
+    url += "&proc_time=" + pcreated + "&limit=" + htrackerProj.procTraceListLimit;
+    if (options.offset) {
+        url += "&offset=" + options.offset;
+    }
 
     seajs.use(["ep"], function(EventProxy) {
 
@@ -1032,7 +1047,15 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
                 return l4i.InnerAlert(alert_id, 'error', data.error.message);
             }
             if (!data.items) {
-                return l4i.InnerAlert(alert_id, 'warn', "No Process/Trace Found");
+                if (!options.offset) {
+                    return l4i.InnerAlert(alert_id, 'warn', "No Process/Trace Found");
+                }
+                data.items = [];
+            }
+            if (options.offset && data.items.length < 1) {
+                return $("#htracker-proj-ptrace-list-more").css({
+                    "display": "none"
+                });
             }
             for (var i in data.items) {
                 if (!data.items[i].perf_size) {
@@ -1040,10 +1063,30 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
                 }
             }
 
+            var append = false;
+            if (options.offset) {
+                append = true;
+            }
+
             l4iTemplate.Render({
                 dstid: "htracker-proj-ptrace-list",
                 tplid: "htracker-proj-ptrace-list-tpl",
                 data: data,
+                append: append,
+                callback: function() {
+                    if (data.items.length >= htrackerProj.procTraceListLimit) {
+                        $("#htracker-proj-ptrace-list-more").css({
+                            "display": "block"
+                        });
+                    } else {
+                        $("#htracker-proj-ptrace-list-more").css({
+                            "display": "none"
+                        });
+                    }
+                    if (data.items.length > 0) {
+                        htrackerProj.procTraceListOffset = data.items[data.items.length - 1].created;
+                    }
+                },
             });
         });
 
@@ -1051,16 +1094,27 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated) {
             alert("NetWork error, Please try again later");
         });
 
-        htracker.TplCmd("proj/ptrace-list", {
-            callback: ep.done("tpl"),
-        });
-
+        if (options.offset) {
+            ep.emit("tpl", null);
+        } else {
+            htracker.TplCmd("proj/ptrace-list", {
+                callback: ep.done("tpl"),
+            });
+        }
 
         htracker.ApiCmd("proj/proc-trace-list?" + url, {
             callback: ep.done("data"),
         });
-
     });
+}
+
+htrackerProj.ProcDyTraceListMore = function() {
+    htrackerProj.ProcDyTraceList(
+        htrackerProj.entryActiveId,
+        htrackerProj.procDyTraceListProcId,
+        htrackerProj.procDyTraceListProcTime, {
+            offset: htrackerProj.procTraceListOffset,
+        });
 }
 
 htrackerProj.flamegraphRender = null;

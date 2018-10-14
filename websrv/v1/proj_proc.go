@@ -17,6 +17,7 @@ package v1
 import (
 	"encoding/base64"
 	"strings"
+	"time"
 
 	"github.com/lessos/lessgo/encoding/json"
 	"github.com/lessos/lessgo/types"
@@ -190,10 +191,14 @@ func (c Proj) ProcStatsAction() {
 func (c Proj) ProcTraceListAction() {
 
 	var (
-		proj_id   = c.Params.Get("proj_id")
-		proc_id   = uint32(c.Params.Int64("proc_id"))
-		proc_time = uint32(c.Params.Int64("proc_time"))
-		sets      hapi.ProjProcTraceList
+		proj_id     = c.Params.Get("proj_id")
+		proc_id     = uint32(c.Params.Int64("proc_id"))
+		proc_time   = uint32(c.Params.Int64("proc_time"))
+		sets        hapi.ProjProcTraceList
+		offset      = uint32(c.Params.Int64("offset"))
+		offset_date = c.Params.Get("offset_date")
+		cutset      = uint32(0)
+		limit       = int(c.Params.Int64("limit"))
 	)
 	defer c.RenderJson(&sets)
 
@@ -204,20 +209,40 @@ func (c Proj) ProcTraceListAction() {
 		return
 	}
 
+	if limit < 10 {
+		limit = 10
+	} else if limit > 100 {
+		limit = 100
+	}
+
+	if offset > 0 {
+		offset -= 1
+	}
+
+	if offset_date != "" {
+		if tn, err := time.Parse(offset_date, "2006-01-02"); err == nil {
+			offset = uint32(tn.Unix()) + 86400
+		}
+	}
+
+	if offset == 0 {
+		offset = uint32(time.Now().Unix())
+	}
+
 	if rs := data.Data.KvProgRevScan(
 		hapi.DataPathProjProcTraceEntry(
 			proj_id,
 			proc_time,
 			proc_id,
-			0,
+			offset,
 		),
 		hapi.DataPathProjProcTraceEntry(
 			proj_id,
 			proc_time,
 			proc_id,
-			0,
+			cutset,
 		),
-		10000,
+		limit,
 	); rs.OK() {
 
 		ls := rs.KvList()
@@ -228,6 +253,23 @@ func (c Proj) ProcTraceListAction() {
 				item.GraphBurn = nil
 				sets.Items = append(sets.Items, &item)
 			}
+		}
+
+		if len(ls) >= limit {
+			mkey := hapi.DataPathProjProcTraceEntry(
+				proj_id,
+				proc_time,
+				proc_id,
+				0)
+			if rs2 := data.Data.KvProgGet(mkey); rs2.OK() {
+				if meta := rs2.Meta(); meta != nil {
+					sets.Total = int64(meta.Num)
+				}
+			}
+		}
+
+		if sets.Total < 1 {
+			sets.Total = int64(len(ls))
 		}
 	}
 

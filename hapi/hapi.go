@@ -237,5 +237,6 @@ type ProjProcTraceEntry struct {
 
 type ProjProcTraceList struct {
 	types.TypeMeta `json:",inline"`
+	Total          int64                 `json:"total"`
 	Items          []*ProjProcTraceEntry `json:"items,omitempty"`
 }

@@ -366,7 +366,7 @@ const (
 )
 
 const (
-	perfRecordTime     = 60
+	perfRecordTime     = 120
 	perfRecordRangeSec = uint32(1200)
 )
 
@@ -440,7 +440,7 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 				}
 			}
 			if err != nil {
-				hlog.Printf("error", "failed to exec %s, err %s, out %s, lfile %d, cmd %s",
+				hlog.Printf("warn", "failed to exec %s, err %s, out %s, lfile %d, cmd %s",
 					perfId, err.Error(), string(out), entry.Tracing.PerfSize, cmd.Command)
 				if cmd.CleanFile == ".json" {
 					json_ok, err = false, nil

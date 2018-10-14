@@ -13,6 +13,13 @@
       </thead>
       <tbody id="htracker-proj-ptrace-list"></tbody>
     </table>
+
+  <div id="htracker-proj-ptrace-list-more" style="display: none; padding: 0 0 10px 10px">
+     <button class="btn btn-primary btn-sm"
+	   onclick="htrackerProj.ProcDyTraceListMore()">
+       More items ...
+	 </button>
+  </div>
 </div>
 
 <script type="text/html" id="htracker-proj-ptrace-list-menus">
@@ -31,7 +38,8 @@
   <td>{[=l4i.UnixTimeFormat(v.updated, "Y-m-d H:i:s")]}</td>
   <td>{[=htracker.UtilResSizeFormat(v.perf_size)]}</td>
   <td align="right">
-    <button class="btn btn-primary btn-sm" onclick="htrackerProj.ProcDyTraceView({[=v.pid]}, {[=v.pcreated]}, {[=v.created]})">On-CPU</button>
+    <button class="btn btn-primary btn-sm"
+	  onclick="htrackerProj.ProcDyTraceView({[=v.pid]}, {[=v.pcreated]}, {[=v.created]})">On-CPU</button>
   </td>
 </tr>
 {[~]}

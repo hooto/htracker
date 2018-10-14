@@ -7,4 +7,5 @@ in*
 *.rpm
 *.txz
 webui/htracker/img/
+.build_tempdir/
 
