@@ -51,7 +51,7 @@ todo ...
 
 # Dependent Projects or Documents
 
-* Brendan D. Gregg's site for dynamic tracing tips [http://www.brendangregg.com/flamegraphs.html](http://www.brendangregg.com/flamegraphs.html)
+* Brendan Gregg's site for computer performance analysis and methodology [http://www.brendangregg.com/](http://www.brendangregg.com/)
 * Stack trace visualizer [https://github.com/brendangregg/FlameGraph](https://github.com/brendangregg/FlameGraph)
 * Cross-platform lib for process and system monitoring [https://github.com/shirou/gopsutil](https://github.com/shirou/gopsutil)
 * D3.js JavaScript visualization lib [https://d3js.org/](https://d3js.org/)

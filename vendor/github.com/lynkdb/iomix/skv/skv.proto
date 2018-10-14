@@ -1,0 +1,90 @@
+// Copyright 2015 Eryx <evorui аt gmаil dοt cοm>, All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+// protoc --go_out=plugins=grpc:. skv.proto
+
+option optimize_for = LITE_RUNTIME;
+
+package skv;
+
+message KvMeta {
+	uint32 type = 1;
+	uint64 version = 2;
+	uint64 expired = 3;
+	uint64 created = 4;
+	uint64 updated = 5;
+	uint64 size = 6;
+	uint32 sum = 7;
+	uint64 num = 8;
+	string name = 13;
+}
+
+message KvEntry {
+	KvMeta meta = 1;
+	bytes value = 2;
+}
+
+message KvProgKeyEntry {
+	uint32 type = 1;
+	bytes data = 2;
+}
+
+message KvProgKey {
+	repeated KvProgKeyEntry items = 1;
+}
+
+message KvProgWriteOptions {
+	uint64 version = 1;
+	uint64 actions = 2;
+	uint64 expired = 3;
+	uint32 prev_sum = 4;
+	uint64 prev_version = 5;
+}
+
+message KvProgKeyValueCommit {
+	KvMeta meta = 1;
+	KvProgKey key = 2;
+	bytes value = 3;
+	KvProgWriteOptions options = 4;
+}
+
+message FileObjectEntryInit {
+	string path = 3;
+	uint64 size = 4;
+	uint64 attrs = 5;
+}
+
+message FileObjectEntryMeta {
+	KvMeta meta = 1;
+	string path = 3;
+	uint64 size = 4;
+	uint64 attrs = 5;
+	uint32 sn = 7;
+	string commit_key = 8;
+	repeated uint32 blocks = 9;
+}
+
+message FileObjectEntryBlock {
+	KvMeta meta = 1;
+	string path = 3;
+	uint64 size = 4;
+	uint64 attrs = 5;
+	uint32 num = 6;
+	uint64 sum = 7;
+	uint32 sn = 8;
+	bytes data = 9;
+	string commit_key = 10;
+}
