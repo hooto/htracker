@@ -109,6 +109,12 @@ func (c Proj) ProcStatsAction() {
 
 	feed := hapi.NewPbStatsSampleFeed(fq.TimeCycle)
 
+	limit := int(fq.TimeCutset-fq.TimeStart+fq.TimeCycle) / 600
+	if limit < 1 {
+		limit = 1
+	}
+	limit += 2
+
 	if rs := data.Data.KvProgScan(
 		hapi.DataPathProjProcStatsEntry(
 			proc_time,
@@ -120,7 +126,7 @@ func (c Proj) ProcStatsAction() {
 			proc_id,
 			fq.TimeCutset+600,
 		),
-		10000,
+		limit,
 	); rs.OK() {
 
 		ls := rs.KvList()
@@ -180,7 +186,18 @@ func (c Proj) ProcStatsAction() {
 			}
 		}
 
-		v.Items = v.Items[1:]
+		offset := 0
+		for j, v2 := range v.Items {
+			if v2.Time < fq.TimeStart {
+				offset = j
+			} else {
+				break
+			}
+		}
+
+		if offset > 0 {
+			v.Items = v.Items[offset:]
+		}
 	}
 
 	feed.Kind = "StatsFeed"
