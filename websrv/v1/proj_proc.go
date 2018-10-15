@@ -194,10 +194,11 @@ func (c Proj) ProcStatsAction() {
 				break
 			}
 		}
-
-		if offset > 0 {
-			v.Items = v.Items[offset:]
+		if offset < 1 || offset >= len(v.Items)-1 {
+			offset = 1
 		}
+
+		v.Items = v.Items[offset:]
 	}
 
 	feed.Kind = "StatsFeed"
