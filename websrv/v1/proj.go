@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/hooto/hlog4g/hlog"
+	"github.com/hooto/hlog4g/hlog"
 	"github.com/hooto/httpsrv"
 	"github.com/lessos/lessgo/types"
 	"github.com/lynkdb/iomix/skv"
@@ -31,6 +31,10 @@ import (
 type Proj struct {
 	*httpsrv.Controller
 }
+
+var (
+	projListCacheNum = 0
+)
 
 func (c Proj) ListAction() {
 
@@ -65,7 +69,7 @@ func (c Proj) ListAction() {
 		return
 	}
 
-	rs.KvEach(func(entry *skv.ResultEntry) int {
+	n := rs.KvEach(func(entry *skv.ResultEntry) int {
 		var set hapi.ProjEntry
 		if err := entry.Decode(&set); err == nil {
 			if ptype == "active" && set.Closed > 0 {
@@ -81,6 +85,9 @@ func (c Proj) ListAction() {
 		}
 		return 0
 	})
+	if n > 0 {
+		projListCacheNum = n
+	}
 
 	sets.Kind = "ProjList"
 }
@@ -92,6 +99,11 @@ func (c Proj) SetAction() {
 
 	if err := c.Request.JsonDecode(&set); err != nil {
 		set.Error = types.NewErrorMeta("400", "Invalid Request "+err.Error())
+		return
+	}
+
+	if projListCacheNum > 100 {
+		set.Error = types.NewErrorMeta("400", "too many projects created (n <= 100)")
 		return
 	}
 
@@ -159,6 +171,10 @@ func (c Proj) SetAction() {
 		return
 	}
 
+	hlog.Printf("info", "Project/New %s", set.Id)
+
+	projListCacheNum += 1
+
 	set.Kind = "ProjEntry"
 }
 
@@ -190,6 +206,10 @@ func (c Proj) DelAction() {
 				set.Error = types.NewErrorMeta("500", "Server Error")
 			} else {
 				set.Kind = "ProjEntry"
+
+				hlog.Printf("info", "Project/Remove %s", id)
+
+				projListCacheNum -= 1
 			}
 		}
 	}
