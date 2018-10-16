@@ -46,7 +46,7 @@ var htrackerProj = {
     }],
     procListMenuActive: null,
     procTraceListOffset: 0,
-    procTraceListLimit: 100,
+    procTraceListLimit: 50,
 }
 
 htrackerProj.Index = function() {

@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/hooto/httpsrv"
@@ -42,16 +43,19 @@ func main() {
 			hlog.Printf("fatal", "Server/Panic %s", err)
 		}
 		hlog.Flush()
+		time.Sleep(200e6)
 	}()
 
 	if err := config.Setup(version, release); err != nil {
-		fmt.Println(err)
-		return
+		hlog.Printf("fatal", "Config/Setup %s", err.Error())
+		fmt.Println("Fatal Config/Setup :", err)
+		os.Exit(1)
 	}
 
 	if err := data.Setup(); err != nil {
-		fmt.Println(err)
-		return
+		hlog.Printf("fatal", "data/Setup %s", err.Error())
+		fmt.Println("Fatal data/Setup :", err)
+		os.Exit(1)
 	}
 
 	go worker.Start()
@@ -71,8 +75,9 @@ func main() {
 	go func() {
 		if err := hs.Start(); err != nil {
 			hlog.Printf("fatal", "Server/Start Fatal: %s", err.Error())
-			quit <- syscall.SIGQUIT
+			fmt.Println("Fatal http/start :", err)
 		}
+		quit <- syscall.SIGQUIT
 	}()
 
 	//

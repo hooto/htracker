@@ -28,7 +28,7 @@ import (
 
 var (
 	Prefix      = "/opt/hooto/tracker"
-	Version     = "0.1.3"
+	Version     = "0.1.4"
 	Release     = "1"
 	VersionHash = Version // TODO
 	err         error
@@ -36,9 +36,8 @@ var (
 )
 
 type ConfigCommon struct {
-	InstanceId string              `json:"instance_id"`
-	Data       connect.ConnOptions `json:"data"`
-	HttpPort   uint16              `json:"http_port"`
+	HttpPort uint16              `json:"http_port"`
+	Data     connect.ConnOptions `json:"data"`
 }
 
 func Setup(version, release string) error {

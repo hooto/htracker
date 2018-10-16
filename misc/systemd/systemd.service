@@ -1,0 +1,23 @@
+[Unit]
+Description=hooto-tracker
+After=network.target
+
+[Service]
+Type=simple
+LimitNOFILE=1024
+ExecStart=/opt/hooto/tracker/bin/hooto-tracker -log_dir=/opt/hooto/tracker/var/log -minloglevel=1 -logtolevel=true
+ExecReload=/bin/kill -HUP $MAINPID
+
+TimeoutStartSec=0
+
+KillMode=process
+
+Restart=always
+RestartSec=10
+
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
+

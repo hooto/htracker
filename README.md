@@ -9,45 +9,47 @@ hooto tracker is a web frontend visualization and analysis tool for APM (applica
 * Continuous tracking and state saving
 * Historical rollup of all data (default setup in 30 days)
 * Resource Usage capture and charts (CPU, Memory, Network, IO, ...)
-* Dynamic Trace capture and graphs (On-CPU, Off-CPU, Memory, ...)
+* Dynamic Trace capture and graphs (On-CPU, ...)
 
 # Install
 
-todo ...
-
-## CentOS 7.x
+## install dependency packages
 
 ``` shell
-sudo yum install -y perf
-```
-## Ubuntu 18.04
+# CentOS 7.x
+sudo yum install -y perf golang
 
-``` shell
-sudo apt install linux-tools-commom linux-tools-generic
+
+# Ubuntu 18.04
+sudo apt install linux-tools-commom linux-tools-generic golang
 ```
 
-## Source
+## download source code, build, install and start the server
 
 ``` shell
-# pull source code
+# download source code
 git clone https://github.com/hooto/htracker.git
 cd htracker
 git submodule update
 
-# build
+
+# build and install
 make
 sudo make install
 
-# setup service, and start
+# start server
 systemctl enable hooto-tracker
 systemctl start hooto-tracker
 ```
 
-## Setup
-
 # Getting Started
 
-todo ...
+you can access the hooto-tracker via **http://127.0.0.1:9520/** with your browser.
+
+> by default, the server running on port 9520, you can change the configuration via /opt/hooto/tracker/etc/config.json, then restart the server `systemctl restart hooto-tracker`
+
+
+
 
 # Dependent Projects or Documents
 
