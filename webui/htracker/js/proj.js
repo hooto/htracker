@@ -1140,12 +1140,14 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
         href: api_svg,
     }];
 
+    /*
     if (htrackerProj.flamegraphRenderType == "js") {
         buttons.push({
             title: "Reset Zoom",
             onclick: "htrackerProj.ProcDyTraceViewReset()",
         });
     }
+    */
     buttons.push({
         title: "Close",
         onclick: "l4iModal.Close()",
@@ -1175,6 +1177,7 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
                 $("#htracker-proj-flamegraph-body").html(obj);
             }
 
+        /*
             if (htrackerProj.flamegraphRenderType == "js") {
 
 
@@ -1200,6 +1203,7 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
                 });
 
             }
+        */
         },
     });
 }

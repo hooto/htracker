@@ -383,11 +383,11 @@ func projActionDyTraceCommands(pid int32, perfPrefix string) []*traceCommandEntr
 			".unfold",
 			false,
 		},
-		{
-			fmt.Sprintf(perfCmdJson, config.Prefix, perfPrefix, perfPrefix),
-			".json",
-			false,
-		},
+		// {
+		// 	fmt.Sprintf(perfCmdJson, config.Prefix, perfPrefix, perfPrefix),
+		// 	".json",
+		// 	false,
+		// },
 		{
 			fmt.Sprintf(perfCmdSvg, config.Prefix, perfPrefix, config.Prefix, perfPrefix),
 			".svg",
@@ -453,7 +453,7 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 
 		if err == nil {
 
-			if json_ok {
+			if false && json_ok {
 				var gitem hapi.FlameGraphBurnProfile
 				if err = json.DecodeFile(perfPrefix+".json", &gitem); err == nil {
 					entry.Tracing.GraphBurn = &gitem

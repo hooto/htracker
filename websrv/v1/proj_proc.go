@@ -301,32 +301,8 @@ func (c Proj) ProcTraceGraphAction() {
 		proc_id   = uint32(c.Params.Int64("proc_id"))
 		proc_time = uint32(c.Params.Int64("proc_time"))
 		created   = uint32(c.Params.Int64("created"))
-		svg_w     = int(c.Params.Int64("svg_w"))
-		svg_h     = int(c.Params.Int64("svg_h"))
 		meta_type = "image/svg+xml"
-		// perf_id   = fmt.Sprintf("perf.%d.%d.%d", created, proc_time, proc_id)
 	)
-
-	if svg_w < 800 {
-		svg_w = 800
-	} else if svg_w > 4000 {
-		svg_w = 4000
-	}
-
-	if svg_h < 400 {
-		svg_w = 400
-	} else if svg_w > 2000 {
-		svg_w = 2000
-	}
-
-	/*
-		fp, err := os.Open(abs_path)
-		if err != nil {
-			c.RenderError(404, "Object Not Found")
-			return
-		}
-		defer fp.Close()
-	*/
 
 	rs := data.Data.KvProgGet(
 		hapi.DataPathProjProcTraceEntry(
@@ -341,15 +317,11 @@ func (c Proj) ProcTraceGraphAction() {
 		if err := rs.Decode(&item); err == nil && len(item.GraphOnCPU) > 100 {
 			if n := strings.Index(item.GraphOnCPU, `<svg version=`); n > 0 {
 				item.GraphOnCPU = item.GraphOnCPU[n:]
-				// item.GraphOnCPU = strings.Replace(item.GraphOnCPU, `width="1200"`, `preserveAspectRatio="xMidYMid meet"`, 1)
-				// item.GraphOnCPU = strings.Replace(item.GraphOnCPU, `width="1200"`, fmt.Sprintf(`width="%d"`, svg_w), 1)
-				// item.GraphOnCPU = strings.Replace(item.GraphOnCPU, `height="790"`, fmt.Sprintf(`height="%d"`, svg_h), 1)
 			}
 
 			c.Response.Out.Header().Set("Content-Type", meta_type)
 			c.Response.Out.Header().Set("Cache-Control", "max-age=86400")
 			c.RenderString(item.GraphOnCPU)
-			// http.ServeContent(c.Response.Out, c.Request.Request, perf_id+".svg", time.Now(), fp)
 
 			return
 		}
@@ -358,6 +330,7 @@ func (c Proj) ProcTraceGraphAction() {
 	c.RenderError(404, "Object Not Found")
 }
 
+/*
 func (c Proj) ProcTraceGraphBurnAction() {
 
 	var (
@@ -385,3 +358,4 @@ func (c Proj) ProcTraceGraphBurnAction() {
 
 	c.RenderError(404, "Object Not Found")
 }
+*/

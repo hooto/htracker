@@ -55,10 +55,10 @@ h3tracker.Boot = function() {
             "~/htracker/js/proc.js" + h3tracker.urlver(),
             "~/htracker/js/proj.js" + h3tracker.urlver(),
             "~/hchart/hchart.js" + h3tracker.urlver(),
-            "~/d3/d3.v4.js",
-            "~/d3-tip/d3-tip.js",
-            "~/d3-flamegraph/d3-flamegraph.js",
-            "~/d3-flamegraph/d3-flamegraph.css",
+            // "~/d3/d3.v4.js",
+            // "~/d3-tip/d3-tip.js",
+            // "~/d3-flamegraph/d3-flamegraph.js",
+            // "~/d3-flamegraph/d3-flamegraph.css",
             "~/icono/icono.css",
         ], function() {
 
