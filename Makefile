@@ -13,7 +13,7 @@ ifndef V
 endif
 
 
-all: hooto-tracker burn 
+all: hooto-tracker
 	@echo ""
 	@echo "build complete"
 	@echo ""
@@ -30,12 +30,20 @@ burn:
 	$(QUIET_BUILD)$(CC) $(CARGS) -o ./bin/burn vendor/github.com/spiermar/burn/main.go$(CCLINK)
 
 install_init:
-	mkdir -p $(PREFIX)/{etc,bin,var/tracker_db,var/log,var/tmp,webui,misc,deps/FlameGraph}
+	# mkdir -p $(PREFIX)/{etc,bin,var/tracker_db,var/log,var/tmp,webui,misc,deps/FlameGraph}
+	mkdir -p $(PREFIX)/etc
+	mkdir -p $(PREFIX)/bin
+	mkdir -p $(PREFIX)/var/tracker_db
+	mkdir -p $(PREFIX)/var/log
+	mkdir -p $(PREFIX)/var/tmp
+	mkdir -p $(PREFIX)/webui
+	mkdir -p $(PREFIX)/misc
+	mkdir -p $(PREFIX)/deps/FlameGraph
 
 install_bin:
 	$(QUIET_INSTALL)
 	install bin/hooto-tracker $(PREFIX)/bin/hooto-tracker$(CCLINK)
-	install bin/burn $(PREFIX)/bin/burn
+	# install bin/burn $(PREFIX)/bin/burn
 
 install_static:
 	$(QUIET_INSTALL)
@@ -51,5 +59,5 @@ install_systemd:
 
 clean:
 	rm -f ./bin/hooto-tracker
-	rm -f ./bin/burn
+	# rm -f ./bin/burn
 

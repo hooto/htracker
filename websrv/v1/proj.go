@@ -24,6 +24,7 @@ import (
 	"github.com/lynkdb/iomix/skv"
 	"github.com/shirou/gopsutil/process"
 
+	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
 )
@@ -96,6 +97,11 @@ func (c Proj) SetAction() {
 
 	var set hapi.ProjEntry
 	defer c.RenderJson(&set)
+
+	if config.Config.RunMode == "demo" {
+		set.Error = types.NewErrorMeta("400", "Operate Denied in DEMO mode")
+		return
+	}
 
 	if err := c.Request.JsonDecode(&set); err != nil {
 		set.Error = types.NewErrorMeta("400", "Invalid Request "+err.Error())
@@ -187,6 +193,11 @@ func (c Proj) DelAction() {
 		prev hapi.ProjEntry
 	)
 	defer c.RenderJson(&set)
+
+	if config.Config.RunMode == "demo" {
+		set.Error = types.NewErrorMeta("400", "Operate Denied in Demo Mode")
+		return
+	}
 
 	if rs := data.Data.KvGet([]byte(key)); rs.NotFound() {
 		set.Error = types.NewErrorMeta("400", "No Tracker Found")
