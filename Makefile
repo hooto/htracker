@@ -48,13 +48,14 @@ install_bin:
 install_static:
 	$(QUIET_INSTALL)
 	rsync -av --include="*/" --include="*.js" --include="*.css" --include="*.tpl" --exclude="*" ./webui/ $(PREFIX)/webui/
+	rsync -av --include="*/" --include="*.png" --exclude="*" ./webui/htracker/img/ $(PREFIX)/webui/htracker/img/
 	sed -i 's/debug:\ true/debug:\ false/g' $(PREFIX)/webui/htracker/js/main.js
 	rsync -av misc/* $(PREFIX)/misc/
 	rsync -av deps/FlameGraph/*.pl $(PREFIX)/deps/FlameGraph/
 
 install_systemd:
 	$(QUIET_INSTALL)
-	install misc/systemd/systemd.service /usr/lib/systemd/system/hooto-tracker.service
+	install misc/systemd/systemd.service /lib/systemd/system/hooto-tracker.service
 	systemctl daemon-reload
 
 clean:

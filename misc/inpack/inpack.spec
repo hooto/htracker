@@ -20,6 +20,7 @@ go build -ldflags "-X main.version={{.project__version}} -X main.release={{.proj
 
 sed -i 's/debug:\!0/debug:\!1/g' {{.buildroot}}/webui/htracker/js/main.js
 sed -i 's/debug:true/debug:false/g' {{.buildroot}}/webui/htracker/js/main.js
+sed -i 's/debug:\ true/debug:\ false/g' {{.buildroot}}/webui/htracker/js/main.js
 
 rm -rf /tmp/rpmbuild/*
 mkdir -p /tmp/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS,BUILDROOT}
@@ -42,9 +43,8 @@ rpmbuild --define "debug_package %{nil}" -ba /tmp/rpmbuild/SOURCES/hooto-tracker
 %files
 misc/
 deps/FlameGraph/*.pl
-webui/htracker/img/system-monitor.svg
-webui/htracker/img/system-monitor-dark.svg
-webui/htracker/img/system-monitor-dark.png
+webui/htracker/img/ht-topnav-light.png
+webui/htracker/img/ht-tab-dark.png
 
 %js_compress
 webui/

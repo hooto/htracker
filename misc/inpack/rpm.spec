@@ -22,10 +22,10 @@ Requires(pre):  perf
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{app_home}/
-mkdir -p %{buildroot}/usr/lib/systemd/system/
+mkdir -p %{buildroot}/lib/systemd/system/
 
 cp -rp * %{buildroot}%{app_home}/
-install -m 600 misc/systemd/systemd.service %{buildroot}/usr/lib/systemd/system/hooto-tracker.service
+install -m 600 misc/systemd/systemd.service %{buildroot}/lib/systemd/system/hooto-tracker.service
 
 %clean
 rm -rf %{buildroot}
@@ -41,6 +41,6 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %dir %{app_home}
-/usr/lib/systemd/system/hooto-tracker.service
+/lib/systemd/system/hooto-tracker.service
 %{app_home}/
 

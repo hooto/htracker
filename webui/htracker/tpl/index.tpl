@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <a class="navbar-brand" href="/htracker/">
-    <img src="/htracker/~/htracker/img/system-monitor.svg" width="30" height="30">
+    <img src="/htracker/~/htracker/img/ht-topnav-light.png" width="30" height="30">
   </a>
   <a class="navbar-brand" href="/htracker/">Perf Tracker</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">

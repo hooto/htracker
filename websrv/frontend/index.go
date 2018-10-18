@@ -36,7 +36,7 @@ func (c Index) IndexAction() {
   <script src="/htracker/~/lessui/js/sea.js?v=` + config.VersionHash + `"></script>
   <script src="/htracker/~/htracker/js/main.js?v=` + config.VersionHash + `"></script>
   <link rel="stylesheet" href="/htracker/~/htracker/css/main.css?v=` + config.VersionHash + `" type="text/css">
-  <link rel="shortcut icon" type="image/x-icon" href="/htracker/~/htracker/img/system-monitor-dark.png">
+  <link rel="shortcut icon" type="image/x-icon" href="/htracker/~/htracker/img/ht-tab-dark.png">
   <script type="text/javascript">
     htracker.version = "` + config.VersionHash + `";
 	window.onload_hooks = [];
