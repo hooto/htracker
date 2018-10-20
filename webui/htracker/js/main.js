@@ -22,6 +22,7 @@ var h3tracker = {
     debug: true,
     hotkey_ctrl_s: null,
     OpToolActive: null,
+    UserLoginInit: 1 << 2,
 }
 
 h3tracker.urlver = function(debug_off) {
@@ -85,9 +86,110 @@ h3tracker.Boot = function() {
                     l4i.UrlEventHandler("proj/index", true);
                 },
             });
+
+        // h3tracker.AlertUserLogin();
         });
     });
 }
+
+
+h3tracker.login_init_tpl = '<div id="htracker-user-login" class="alert"></div>\
+<div class="form-group">\
+  <label>Password</label>\
+  <input type="text" class="form-control force" id="htracker-user-auth" placeholder="Enter password">\
+</div>\
+<div class="form-group">\
+  <label>Retype Password</label>\
+  <input type="text" class="form-control force" id="htracker-user-auth-confirm" placeholder="Retype password">\
+</div>';
+
+h3tracker.login_tpl = '<div id="htracker-user-login" class="alert"></div>\
+<div class="form-group">\
+  <label>Password</label>\
+  <input type="text" class="form-control force" id="htracker-user-auth" placeholder="Enter password">\
+</div>';
+
+h3tracker.login_relogin = "You are not logged in, or your login session has expired. Please sign in again";
+
+h3tracker.AlertUserLogin = function(options) {
+    options = options || {};
+
+    var tpl = h3tracker.login_tpl;
+    var msg = h3tracker.login_relogin;
+    var height = 300;
+    var title = "SIGN IN"
+    var alert_type = "info";
+
+    if (options.init) {
+        tpl = h3tracker.login_init_tpl;
+        msg = "This is your first login, please set a password";
+        title = "Save";
+        height += 60;
+        alert_type = "warn";
+    }
+
+    l4iModal.Open({
+        title: "Sign in with your Account",
+        tplsrc: tpl,
+        width: 600,
+        height: height,
+        buttons: [{
+            title: title,
+            onclick: "htracker.LoginCommit()",
+            style: "btn-primary",
+        }],
+        callback: function(err, data) {
+            l4i.InnerAlert("#htracker-user-login", alert_type, msg);
+        },
+    });
+}
+
+h3tracker.LoginCommit = function() {
+
+    var req = {};
+    var alert_id = "#htracker-user-login";
+
+    try {
+        req.auth = $("#htracker-user-auth").val();
+        if (!req.auth) {
+            throw "Invalid Request";
+        }
+
+        var confirm = $("#htracker-user-auth-confirm");
+        if (confirm) {
+            req.auth_confirm = confirm.val();
+        }
+
+    } catch (err) {
+        return l4i.InnerAlert(alert_id, 'error', err);
+    }
+
+    htracker.ApiCmd("auth/login", {
+        method: "POST",
+        data: JSON.stringify(req),
+        callback: function(err, data) {
+
+            if (err) {
+                return l4i.InnerAlert(alert_id, 'error', err);
+            }
+
+            if (!data || data.kind != "AuthSession") {
+                var msg = "Bad Request";
+                if (data.error) {
+                    msg = data.error.message;
+                }
+                return l4i.InnerAlert(alert_id, 'error', msg);
+            }
+
+            l4i.InnerAlert(alert_id, 'alert-success', "Successfully Sign-on. Page redirecting ...");
+
+            window.setTimeout(function() {
+                window.location = "/htracker/";
+            }, 1500);
+        }
+    })
+}
+
 
 h3tracker.HttpSrvBasePath = function(url) {
     if (h3tracker.base == "") {
@@ -122,6 +224,14 @@ h3tracker.ApiCmd = function(url, options) {
         appcb = options.callback;
     }
     options.callback = function(err, data) {
+        if (data && data.kind == "AuthSession" && data.action == h3tracker.UserLoginInit) {
+            return h3tracker.AlertUserLogin({
+                init: true
+            });
+        }
+        if (err == "Unauthorized") {
+            return h3tracker.AlertUserLogin();
+        }
         if (appcb) {
             appcb(err, data);
         }

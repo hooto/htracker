@@ -32,6 +32,10 @@ func DataPathProjHistoryEntry(id string) string {
 	return fmt.Sprintf("proj/hist/%s", id)
 }
 
+func DataPathUserSessionEntry(id string) skv.KvProgKey {
+	return skv.NewKvProgKey("sess", id)
+}
+
 func DataPathProjProcEntry(
 	ptype string,
 	proj_id string,

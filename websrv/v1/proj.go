@@ -37,6 +37,26 @@ var (
 	projListCacheNum = 0
 )
 
+func (c *Proj) Init() int {
+
+	if config.Config.Auth == "" {
+		set := AuthSession{
+			Action: AuthSessionInit,
+		}
+		set.Kind = "AuthSession"
+		c.RenderJson(set)
+		return 1
+	}
+
+	if sess := AuthSessionInstance(c.Session); sess == nil {
+		c.Response.Out.WriteHeader(401)
+		c.RenderJson(types.NewTypeErrorMeta("401", "Unauthorized"))
+		return 1
+	}
+
+	return 0
+}
+
 func (c Proj) ListAction() {
 
 	var sets hapi.ProjList

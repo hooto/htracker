@@ -37,8 +37,9 @@ var (
 
 type ConfigCommon struct {
 	HttpPort uint16              `json:"http_port"`
-	Data     connect.ConnOptions `json:"data"`
 	RunMode  string              `json:"run_mode,omitempty"`
+	Auth     string              `json:"auth"`
+	Data     connect.ConnOptions `json:"data"`
 }
 
 func Setup(version, release string) error {

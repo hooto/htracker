@@ -24,17 +24,38 @@ import (
 	"github.com/lessos/lessgo/types"
 	"github.com/shirou/gopsutil/process"
 
+	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/hapi"
 	"github.com/hooto/htracker/status"
+)
+
+var (
+	plist hapi.ProcList
 )
 
 type Proc struct {
 	*httpsrv.Controller
 }
 
-var (
-	plist hapi.ProcList
-)
+func (c *Proc) Init() int {
+
+	if config.Config.Auth == "" {
+		set := AuthSession{
+			Action: AuthSessionInit,
+		}
+		set.Kind = "AuthSession"
+		c.RenderJson(set)
+		return 1
+	}
+
+	if sess := AuthSessionInstance(c.Session); sess == nil {
+		c.Response.Out.WriteHeader(401)
+		c.RenderJson(types.NewTypeErrorMeta("401", "Unauthorized"))
+		return 1
+	}
+
+	return 0
+}
 
 func (c Proc) EntryAction() {
 

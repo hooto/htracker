@@ -24,6 +24,7 @@ func NewModule() httpsrv.Module {
 
 	module.ControllerRegister(new(Proc))
 	module.ControllerRegister(new(Proj))
+	module.ControllerRegister(new(Auth))
 
 	return module
 }
