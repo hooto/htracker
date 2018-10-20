@@ -36,6 +36,8 @@ var htrackerProj = {
         uri: "proj/list/history",
     }],
     listMenuActive: null,
+    listLimit: 50,
+    listOffset: null,
     listAutoRefreshTimer: null,
     procListMenus: [{
         name: "Current Running Processes",
@@ -76,14 +78,17 @@ htrackerProj.ListRefreshHistory = function() {
     htrackerProj.ListRefresh("proj/list/history");
 }
 
-htrackerProj.ListRefresh = function(list_active) {
+htrackerProj.ListRefresh = function(list_active, options) {
+    options = options || {};
 
-    var elem = document.getElementById("htracker-projlist");
+    var elem = document.getElementById("htracker-projlist-table");
     if (!elem) {
         return;
     }
 
-    var url = "limit=20";
+    var url = "limit=" + htrackerProj.listLimit;
+
+
     var elemq = document.getElementById("htracker-projlist-query");
     if (elemq && elemq.value.length > 0) {
         url += ("&q=" + elemq.value);
@@ -95,9 +100,15 @@ htrackerProj.ListRefresh = function(list_active) {
     }
     if (list_active != "proj/list/history") {
         list_active = "proj/list/active";
+        options.offset = null;
     } else {
         url += "&filter_closed=true";
     }
+
+    if (options.offset) {
+        url += "&offset=" + options.offset;
+    }
+
     htrackerProj.listMenuActive = list_active;
     htrackerProj.procListMenuActive = null;
 
@@ -108,6 +119,11 @@ htrackerProj.ListRefresh = function(list_active) {
 
     htracker.ApiCmd("proj/list?" + url, {
         callback: function(err, data) {
+
+            $("#htracker-projlist-more").css({
+                "display": "none"
+            });
+            htrackerProj.listOffset = null;
 
             if (err) {
                 $("#htracker-projlist").empty();
@@ -146,13 +162,37 @@ htrackerProj.ListRefresh = function(list_active) {
                 data._history = true;
             }
 
+            var elemt = document.getElementById("htracker-projlist");
+            if (!elemt) {
+                l4iTemplate.Render({
+                    dstid: "htracker-projlist-table",
+                    tplid: "htracker-projlist-table-tpl",
+                    data: {
+                        _history: data._history,
+                    },
+                });
+            }
+
+            var append = false;
+            if (options.offset) {
+                append = true;
+            }
             l4iTemplate.Render({
                 dstid: "htracker-projlist",
                 tplid: "htracker-projlist-tpl",
                 data: data,
+                append: append,
             });
+
             l4i.InnerAlert(alert_id);
             htrackerProj.entryActiveId = null;
+
+            if (list_active == "proj/list/history" && data.items.length >= htrackerProj.listLimit) {
+                $("#htracker-projlist-more").css({
+                    "display": "block"
+                });
+                htrackerProj.listOffset = data.items[data.items.length - 1].id;
+            }
 
             if (waiting && list_active == "proj/list/active" && !htrackerProj.listAutoRefreshTimer) {
                 htrackerProj.listAutoRefreshTimer = window.setTimeout(function() {
@@ -168,6 +208,13 @@ htrackerProj.ListRefresh = function(list_active) {
 htrackerProj.ListRefreshQuery = function() {
     htrackerProj.ListRefresh();
 }
+
+htrackerProj.ListMore = function() {
+    htrackerProj.ListRefresh(null, {
+        offset: htrackerProj.listOffset,
+    });
+}
+
 
 htrackerProj.EntryView = function(id) {
 
@@ -504,7 +551,7 @@ htrackerProj.ProcList = function(proj_id, list_active) {
         return;
     }
     var alert_id = "#htracker-proj-proclist-alert";
-    var url = "proj_id=" + proj_id + "&limit=50";
+    var url = "proj_id=" + proj_id;
 
     if (htrackerProj.listMenuActive == "proj/list/history") {
         list_active = "proj/proc/exit";

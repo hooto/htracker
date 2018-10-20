@@ -15,6 +15,7 @@
 package kvgo
 
 import (
+	"bytes"
 	"sync"
 
 	"github.com/lynkdb/iomix/skv"
@@ -111,13 +112,15 @@ func (cn *Conn) KvScan(offset, cutset []byte, limit int) skv.Result {
 func (cn *Conn) KvRevScan(offset, cutset []byte, limit int) skv.Result {
 
 	var (
-		off = t_ns_cat(ns_kv, offset)
-		cut = t_ns_cat(ns_kv, cutset)
-		rs  = newResult(0, nil)
+		off  = t_ns_cat(ns_kv, offset)
+		offx = t_ns_cat(ns_kv, offset)
+		cut  = t_ns_cat(ns_kv, cutset)
+		rs   = newResult(0, nil)
 	)
 
-	for i := len(off); i < 200; i++ {
-		off = append(off, 0xff)
+	for i := len(offx); i < 200; i += 10 {
+		offx = append(offx, []byte{0xff, 0xff, 0xff, 0xff, 0xff,
+			0xff, 0xff, 0xff, 0xff, 0xff}...)
 	}
 
 	if limit > skv.ScanLimitMax {
@@ -128,7 +131,7 @@ func (cn *Conn) KvRevScan(offset, cutset []byte, limit int) skv.Result {
 
 	iter := cn.db.NewIterator(&util.Range{
 		Start: cut,
-		Limit: off,
+		Limit: offx,
 	}, nil)
 
 	for ok := iter.Last(); ok; ok = iter.Prev() {
@@ -142,6 +145,10 @@ func (cn *Conn) KvRevScan(offset, cutset []byte, limit int) skv.Result {
 		}
 
 		if len(iter.Value()) < 2 {
+			continue
+		}
+
+		if bytes.Compare(iter.Key(), off) == 0 {
 			continue
 		}
 

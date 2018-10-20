@@ -1,6 +1,14 @@
 <div>
   <div class="htracker-div-container alert less-hide" id="htracker-projlist-alert"></div>
-  <div class="htracker-div-light" id="htracker-projlist"></div>
+  <div class="htracker-div-light">
+    <div id="htracker-projlist-table"></div>
+    <div id="htracker-projlist-more" style="display: none; padding: 0 0 10px 10px">
+      <button class="btn btn-primary btn-sm"
+        onclick="htrackerProj.ListMore()">
+        More items ...
+      </button>
+    </div>
+  </div>
 </div>
 
 <script type="text/html" id="htracker-projlist-menus">
@@ -21,9 +29,9 @@
 </li>
 </script>
 
-<script type="text/html" id="htracker-projlist-tpl">
+<script type="text/html" id="htracker-projlist-table-tpl">
 <table class="table table-hover valign-middle">
-  <thead>
+<thead>
   <tr>
     <th>Name</th>
     <th>Filter</th>
@@ -32,8 +40,12 @@
     <th>Hit Processes</th>
     <th width="30"></th>
   </tr>
-  </thead>
-<tbody>
+</thead>
+<tbody id="htracker-projlist"></tbody>
+</table>
+</script>
+
+<script type="text/html" id="htracker-projlist-tpl">
 {[~it.items :v]}
 <tr id="proj-{[=v.id]}"
   class="htracker-div-hover"
@@ -54,7 +66,4 @@
   </td>
 </tr>
 {[~]}
-</tbody>
-</table>
 </script>
-

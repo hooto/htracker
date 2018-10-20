@@ -45,6 +45,7 @@ func (c Proj) ListAction() {
 	var (
 		limit  = int(c.Params.Int64("limit"))
 		closed = c.Params.Get("filter_closed")
+		off    = c.Params.Get("offset")
 		ptype  = "active"
 		pptype = "hit"
 	)
@@ -60,8 +61,12 @@ func (c Proj) ListAction() {
 		pptype = "exit"
 	}
 
+	if off == "" {
+		off = "Z"
+	}
+
 	var (
-		offset = hapi.DataPathProjEntry(ptype, "Z")
+		offset = hapi.DataPathProjEntry(ptype, off)
 		cutset = hapi.DataPathProjEntry(ptype, "")
 	)
 
@@ -76,6 +81,7 @@ func (c Proj) ListAction() {
 			if ptype == "active" && set.Closed > 0 {
 				return 0
 			}
+
 			mkey := hapi.DataPathProjProcEntry(pptype, set.Id, 0, 0)
 			if rs2 := data.Data.KvProgGet(mkey); rs2.OK() {
 				if meta := rs2.Meta(); meta != nil {

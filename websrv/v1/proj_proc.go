@@ -39,8 +39,8 @@ func (c Proj) ProcListAction() {
 		ptype   = "hit"
 	)
 
-	if limit < 10 {
-		limit = 10
+	if limit < 50 {
+		limit = 50
 	} else if limit > 100 {
 		limit = 100
 	}

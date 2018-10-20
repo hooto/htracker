@@ -42,14 +42,14 @@ h3tracker.Boot = function() {
     });
 
     seajs.use([
-        "~/lessui/js/browser-detect.js",
+        // "~/lessui/js/browser-detect.js",
         "~/jquery/jquery.js",
         "~/lessui/js/eventproxy.js",
     ], function() {
 
         seajs.use([
             "~/bs/4/css/bootstrap.css",
-            "~/bs/4/js/bootstrap.js",
+            // "~/bs/4/js/bootstrap.js",
             "~/lessui/js/lessui.js" + h3tracker.urlver(),
             "~/lessui/css/lessui.css" + h3tracker.urlver(),
             "~/htracker/js/proc.js" + h3tracker.urlver(),

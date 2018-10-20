@@ -38,7 +38,6 @@ make
 sudo make install
 
 # start server
-systemctl enable hooto-tracker
 systemctl start hooto-tracker
 ```
 
