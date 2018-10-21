@@ -1,6 +1,6 @@
 [project]
 name = hooto-tracker
-version = 0.1.4
+version = 0.1.5
 vendor = hooto.com
 homepage = https://github.com/hooto/htracker
 groups = dev/sys-srv

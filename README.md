@@ -51,7 +51,7 @@ you can access the hooto-tracker via **http://127.0.0.1:9520/** with your browse
 
 Hooto Tracker use **Project** to match and manage the processes that need to be tracked. 
 
-You can choose different matching pattens to match one or multiple processes creating a New Project
+You can choose different matching pattens to match one or multiple processes in creating a New Project
 
 * Process ID
 * Process Name
@@ -62,12 +62,12 @@ You can choose different matching pattens to match one or multiple processes cre
 ### Tips
 
 * Resource Monitoring (CPU, Memory, IO, Net, ...) is collected in real time, until the process exits
-* Dynamic Tracing (CPU FrameGraph) is automatically runs in every 20 minutes, 2 minutes each time 
+* Dynamic Tracing (CPU FlameGraph) is automatically runs in every 20 minutes, 2 minutes each time 
 
 ![PIC 2](doc/proj-proc-list.png)
 
-### Example of FrameGraph in Dynamic Tracing
-![PIC 3](doc/proj-proc-framegraph.png)
+### Example of FlameGraph in Dynamic Tracing
+![PIC 3](doc/proj-proc-flamegraph.png)
 
 ### Example of Resource Monitoring
 ![PIC 4](doc/proj-proc-stats.png)
