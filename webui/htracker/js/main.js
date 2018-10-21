@@ -106,7 +106,7 @@ h3tracker.login_init_tpl = '<div id="htracker-user-login" class="alert"></div>\
 h3tracker.login_tpl = '<div id="htracker-user-login" class="alert"></div>\
 <div class="form-group">\
   <label>Password</label>\
-  <input type="text" class="form-control force" id="htracker-user-auth" placeholder="Enter password">\
+  <input type="text" class="form-control inputfocus" id="htracker-user-auth" placeholder="Enter password">\
 </div>';
 
 h3tracker.login_relogin = "You are not logged in, or your login session has expired. Please sign in again";
@@ -186,6 +186,17 @@ h3tracker.LoginCommit = function() {
             window.setTimeout(function() {
                 window.location = "/htracker/";
             }, 1500);
+        }
+    })
+}
+
+h3tracker.UserSignOut = function() {
+    htracker.ApiCmd("auth/sign-out", {
+        callback: function(err, data) {
+            l4iAlert.Open("info", "Successfully Sing-out");
+            window.setTimeout(function() {
+                window.location = "/htracker/";
+            }, 10000);
         }
     })
 }

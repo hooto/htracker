@@ -7,7 +7,7 @@
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" id="navbarNav">
-    <ul id="htracker-nav" class="navbar-nav" style="margin-left: 30px">
+    <ul id="htracker-nav" class="navbar-nav mr-auto" style="margin-left: 30px">
       <li class="nav-item l4i-nav-item">
         <a class="nav-link" href="#proj/index">Projects</a>
       </li>
@@ -15,6 +15,9 @@
         <a class="nav-link" href="#proc/index">Processes</a>
       </li>
     </ul>
+    <span class="navbar-text">
+        <a class="" href="#user/sign-out" onclick="htracker.UserSignOut()">Sign Out</a>
+    </span>
   </div>
 </nav>
 

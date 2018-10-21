@@ -1,0 +1,28 @@
+set -e
+set -o pipefail
+export PATH=$PATH:/usr/local/go/bin:/opt/gopath/bin
+export GOPATH=/opt/gopath
+mkdir -p /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/etc
+mkdir -p /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/bin
+mkdir -p /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/misc/inpack
+mkdir -p /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/var/{log,tmp,tracker_db}
+mkdir -p /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/webui
+go build -ldflags "-X main.version=0.1.5 -X main.release=1" -o /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/bin/hooto-tracker main.go
+# go build -ldflags "-s -w" -o /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/bin/burn  vendor/github.com/spiermar/burn/main.go
+sed -i 's/debug:\!0/debug:\!1/g' /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/webui/htracker/js/main.js
+sed -i 's/debug:true/debug:false/g' /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/webui/htracker/js/main.js
+sed -i 's/debug:\ true/debug:\ false/g' /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/webui/htracker/js/main.js
+rm -rf /tmp/rpmbuild/*
+mkdir -p /tmp/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS,BUILDROOT}
+mkdir -p /tmp/rpmbuild/SOURCES/hooto-tracker-0.1.5/
+rsync -av /opt/gopath/src/github.com/hooto/htracker/.build_tempdir/* /tmp/rpmbuild/SOURCES/hooto-tracker-0.1.5/
+sed -i 's/__version__/0.1.5/g' /tmp/rpmbuild/SOURCES/hooto-tracker-0.1.5/misc/inpack/rpm.spec
+sed -i 's/__release__/1/g' /tmp/rpmbuild/SOURCES/hooto-tracker-0.1.5/misc/inpack/rpm.spec
+cd /tmp/rpmbuild/SOURCES/
+tar zcf hooto-tracker-0.1.5.tar.gz hooto-tracker-0.1.5
+rpmbuild --define "debug_package %{nil}" -ba /tmp/rpmbuild/SOURCES/hooto-tracker-0.1.5/misc/inpack/rpm.spec \
+  --define='_tmppath /tmp/rpmbuild' \
+  --define='_builddir /tmp/rpmbuild/BUILD' \
+  --define='_topdir /tmp/rpmbuild' \
+  --define='dist .el7'
+exit 0
