@@ -73,12 +73,30 @@ h3tracker.Boot = function() {
                 }, 1000);
             }
 
-            l4i.UrlEventRegister("proc/index", htrackerProc.Index, "htracker-nav");
-            l4i.UrlEventRegister("proj/index", htrackerProj.Index, "htracker-nav");
+            h3tracker.load();
+        });
+    });
+}
+
+h3tracker.load = function() {
+
+    l4i.UrlEventRegister("proc/index", htrackerProc.Index, "htracker-nav");
+    l4i.UrlEventRegister("proj/index", htrackerProj.Index, "htracker-nav");
+
+    seajs.use(["ep"], function(EventProxy) {
+
+        var ep = EventProxy.create("tpl", "data", function(tpl, data) {
+
+            if (!data.access_token || data.access_token.length < 10) {
+                return h3tracker.AlertUserLogin();
+            }
+
+            htracker.ModuleNavbarLeftRefresh("htracker-proj-proclist-menus");
+            htracker.OpToolsRefresh("#htracker-proj-proclist-optools");
 
             l4iTemplate.Render({
                 dstid: "body-content",
-                tplurl: h3tracker.TplPath("index"),
+                tplsrc: tpl,
                 data: {
                     version: h3tracker.version,
                 },
@@ -87,18 +105,29 @@ h3tracker.Boot = function() {
                 },
             });
         });
+
+        ep.fail(function(err) {
+            alert("NetWork error, Please try again later");
+        });
+
+        htracker.TplCmd("index", {
+            callback: ep.done("tpl"),
+        });
+
+        htracker.ApiCmd("auth/session", {
+            callback: ep.done("data"),
+        });
     });
 }
-
 
 h3tracker.login_init_tpl = '<div id="htracker-user-login" class="alert"></div>\
 <div class="form-group">\
   <label>Password</label>\
-  <input type="password" class="form-control force" id="htracker-user-auth" placeholder="Enter password">\
+  <input type="password" class="form-control inputfocus" id="htracker-user-auth" placeholder="Enter password">\
 </div>\
 <div class="form-group">\
   <label>Retype Password</label>\
-  <input type="password" class="form-control force" id="htracker-user-auth-confirm" placeholder="Retype password">\
+  <input type="password" class="form-control" id="htracker-user-auth-confirm" placeholder="Retype password">\
 </div>';
 
 h3tracker.login_tpl = '<div id="htracker-user-login" class="alert"></div>\
@@ -110,6 +139,12 @@ h3tracker.login_tpl = '<div id="htracker-user-login" class="alert"></div>\
 h3tracker.login_relogin = "You are not logged in, or your login session has expired. Please sign in again";
 
 h3tracker.AlertUserLogin = function(options) {
+
+    var elem = document.getElementById("htracker-user-login");
+    if (elem) {
+        return;
+    }
+
     options = options || {};
 
     var tpl = h3tracker.login_tpl;
@@ -191,7 +226,7 @@ h3tracker.LoginCommit = function() {
 h3tracker.UserSignOut = function() {
     htracker.ApiCmd("auth/sign-out", {
         callback: function(err, data) {
-            l4iAlert.Open("info", "Successfully Sign-out");
+            l4iAlert.Open("info", "Successfully Sign-out. Page redirecting ...");
             window.setTimeout(function() {
                 window.location = "/htracker/";
             }, 3000);
@@ -233,7 +268,21 @@ h3tracker.ApiCmd = function(url, options) {
         appcb = options.callback;
     }
     options.callback = function(err, data) {
-        if (data) {
+
+        if (err && !data && err.length > 2 &&
+            err[0] == "{" && err[err.length - 1] == "}") {
+            data = JSON.parse(err);
+        }
+
+        if (data && typeof data === "string" && data.length > 2 &&
+            data[0] == "{" && data[data.length - 1] == "}") {
+            var dobj = JSON.parse(data);
+            if (dobj) {
+                data = dobj;
+            }
+        }
+
+        if (data && typeof data === "object") {
             if (data.kind == "AuthSession" && data.action == h3tracker.UserLoginInit) {
                 return h3tracker.AlertUserLogin({
                     init: true
@@ -247,6 +296,7 @@ h3tracker.ApiCmd = function(url, options) {
         if (err == "Unauthorized") {
             return h3tracker.AlertUserLogin();
         }
+
         if (appcb) {
             appcb(err, data);
         }

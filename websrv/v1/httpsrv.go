@@ -16,6 +16,8 @@ package v1
 
 import (
 	"github.com/hooto/httpsrv"
+
+	"github.com/hooto/htracker/websrv/auth"
 )
 
 func NewModule() httpsrv.Module {
@@ -24,7 +26,7 @@ func NewModule() httpsrv.Module {
 
 	module.ControllerRegister(new(Proc))
 	module.ControllerRegister(new(Proj))
-	module.ControllerRegister(new(Auth))
+	module.ControllerRegister(new(auth.Auth))
 
 	return module
 }

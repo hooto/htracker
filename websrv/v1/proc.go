@@ -27,6 +27,7 @@ import (
 	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/hapi"
 	"github.com/hooto/htracker/status"
+	"github.com/hooto/htracker/websrv/auth"
 )
 
 var (
@@ -40,17 +41,12 @@ type Proc struct {
 func (c *Proc) Init() int {
 
 	if config.Config.Auth == "" {
-		set := AuthSession{
-			Action: AuthSessionInit,
-		}
-		set.Kind = "AuthSession"
-		c.RenderJson(set)
+		c.RenderJson(auth.AuthErrInitAuth)
 		return 1
 	}
 
-	if sess := AuthSessionInstance(c.Session); sess == nil {
-		c.Response.Out.WriteHeader(401)
-		c.RenderJson(types.NewTypeErrorMeta("401", "Unauthorized"))
+	if sess := auth.AuthSessionInstance(c.Session); sess == nil {
+		c.RenderJson(auth.AuthErrUnAuth)
 		return 1
 	}
 

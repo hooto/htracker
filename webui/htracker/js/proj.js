@@ -420,13 +420,20 @@ htrackerProj.NewEntryCommit = function() {
                 return l4i.InnerAlert(alert_id, 'error', msg);
             }
 
-            l4i.InnerAlert(alert_id, 'ok', "Successful operation");
+            // l4i.InnerAlert(alert_id, 'ok', "Successful operation, the system will take 2 minutes to collect data, please wait ...");
+            l4iModal.Open({
+                title: "OK",
+                height: 200,
+                backEnable: false,
+                tplsrc: '<div class="alert alert-success">Successful operation, the system will take 2 minutes to collect data, ...</div>',
+            });
 
             window.setTimeout(function() {
                 htrackerProj.ListRefresh("proj/list/active");
                 l4iModal.Close();
-            }, 1000);
-        }
+            // l4iAlert.Close();
+            }, 3000);
+        },
     })
 }
 
@@ -475,8 +482,6 @@ htrackerProj.EntryDel = function(id, is_confirm) {
                 }
                 return l4i.InnerAlert(alert_id, 'error', msg);
             }
-
-            // $("#proj-" + id).remove();
 
             l4i.InnerAlert(alert_id, 'ok', "Successful operation");
             window.setTimeout(function() {

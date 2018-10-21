@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1
+package auth
 
 import (
 	"net/http"
@@ -31,6 +31,16 @@ import (
 const (
 	AccessTokenKey         = "ht_token"
 	AuthSessionInit uint32 = 1 << 2
+)
+
+var (
+	AuthErrUnAuth   = types.NewTypeErrorMeta("401", "Unauthorized")
+	AuthErrInitAuth = AuthSession{
+		TypeMeta: types.TypeMeta{
+			Kind: "AuthSession",
+		},
+		Action: AuthSessionInit,
+	}
 )
 
 type AuthSession struct {
@@ -61,6 +71,17 @@ func AuthSessionInstance(s *httpsrv.Session) *AuthSession {
 
 type Auth struct {
 	*httpsrv.Controller
+}
+
+func (c Auth) SessionAction() {
+
+	if config.Config.Auth == "" {
+		c.RenderJson(AuthErrInitAuth)
+	} else if sess := AuthSessionInstance(c.Session); sess != nil {
+		c.RenderJson(sess)
+	} else {
+		c.RenderJson(AuthErrUnAuth)
+	}
 }
 
 func (c Auth) LoginAction() {
