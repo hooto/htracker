@@ -86,8 +86,6 @@ h3tracker.Boot = function() {
                     l4i.UrlEventHandler("proj/index", true);
                 },
             });
-
-        // h3tracker.AlertUserLogin();
         });
     });
 }
@@ -96,17 +94,17 @@ h3tracker.Boot = function() {
 h3tracker.login_init_tpl = '<div id="htracker-user-login" class="alert"></div>\
 <div class="form-group">\
   <label>Password</label>\
-  <input type="text" class="form-control force" id="htracker-user-auth" placeholder="Enter password">\
+  <input type="password" class="form-control force" id="htracker-user-auth" placeholder="Enter password">\
 </div>\
 <div class="form-group">\
   <label>Retype Password</label>\
-  <input type="text" class="form-control force" id="htracker-user-auth-confirm" placeholder="Retype password">\
+  <input type="password" class="form-control force" id="htracker-user-auth-confirm" placeholder="Retype password">\
 </div>';
 
 h3tracker.login_tpl = '<div id="htracker-user-login" class="alert"></div>\
 <div class="form-group">\
   <label>Password</label>\
-  <input type="text" class="form-control inputfocus" id="htracker-user-auth" placeholder="Enter password">\
+  <input type="password" class="form-control inputfocus" id="htracker-user-auth" placeholder="Enter password">\
 </div>';
 
 h3tracker.login_relogin = "You are not logged in, or your login session has expired. Please sign in again";
@@ -193,10 +191,10 @@ h3tracker.LoginCommit = function() {
 h3tracker.UserSignOut = function() {
     htracker.ApiCmd("auth/sign-out", {
         callback: function(err, data) {
-            l4iAlert.Open("info", "Successfully Sing-out");
+            l4iAlert.Open("info", "Successfully Sign-out");
             window.setTimeout(function() {
                 window.location = "/htracker/";
-            }, 10000);
+            }, 3000);
         }
     })
 }
@@ -235,11 +233,17 @@ h3tracker.ApiCmd = function(url, options) {
         appcb = options.callback;
     }
     options.callback = function(err, data) {
-        if (data && data.kind == "AuthSession" && data.action == h3tracker.UserLoginInit) {
-            return h3tracker.AlertUserLogin({
-                init: true
-            });
+        if (data) {
+            if (data.kind == "AuthSession" && data.action == h3tracker.UserLoginInit) {
+                return h3tracker.AlertUserLogin({
+                    init: true
+                });
+            }
+            if (data.error && data.error.code == "401") {
+                return h3tracker.AlertUserLogin();
+            }
         }
+
         if (err == "Unauthorized") {
             return h3tracker.AlertUserLogin();
         }
