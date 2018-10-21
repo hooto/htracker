@@ -47,7 +47,39 @@ you can access the hooto-tracker via **http://127.0.0.1:9520/** with your browse
 
 > by default, the server running on port 9520, you can change the configuration via /opt/hooto/tracker/etc/config.json, then restart the server `systemctl restart hooto-tracker`
 
+## Project
 
+Hooto Tracker use **Project** to match and manage the processes that need to be tracked. 
+
+You can choose different matching pattens to match one or multiple processes creating a New Project
+
+* Process ID
+* Process Name
+* Process Command line content
+
+![PIC 1](doc/proj-new.png)
+
+### Tips
+
+* Resource Monitoring (CPU, Memory, IO, Net, ...) is collected in real time, until the process exits
+* Dynamic Tracing (CPU FrameGraph) is automatically runs in every 20 minutes, 2 minutes each time 
+
+![PIC 2](doc/proj-proc-list.png)
+
+### Example of FrameGraph in Dynamic Tracing
+![PIC 3](doc/proj-proc-framegraph.png)
+
+### Example of Resource Monitoring
+![PIC 4](doc/proj-proc-stats.png)
+
+
+
+## Processes (Top N)
+
+Hooto Tracker also create a simple page that list the Top N processes, and you can click on the process to create a New Project with a shortcut way.
+
+
+![PIC 5](doc/proc-list.png)
 
 
 # Dependent Projects or Documents
