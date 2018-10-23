@@ -19,7 +19,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	// "time"
+	"time"
 
 	"github.com/hooto/hlang4g/hlang"
 	"github.com/hooto/hlog4g/hlog"
@@ -39,13 +39,13 @@ var (
 
 func main() {
 
-	// defer func() {
-	// 	if err := recover(); err != nil {
-	// 		hlog.Printf("fatal", "Server/Panic %s", err)
-	// 	}
-	// 	hlog.Flush()
-	// 	time.Sleep(200e6)
-	// }()
+	defer func() {
+		if err := recover(); err != nil {
+			hlog.Printf("fatal", "Server/Panic %s", err)
+		}
+		hlog.Flush()
+		time.Sleep(200e6)
+	}()
 
 	if err := config.Setup(version, release); err != nil {
 		hlog.Printf("fatal", "Config/Setup %s", err.Error())
