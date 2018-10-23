@@ -45,6 +45,7 @@ misc/
 deps/FlameGraph/*.pl
 webui/htracker/img/ht-topnav-light.png
 webui/htracker/img/ht-tab-dark.png
+i18n/
 
 %js_compress
 webui/
