@@ -39,6 +39,7 @@ func (c Index) IndexAction() {
   <link rel="shortcut icon" type="image/x-icon" href="/htracker/~/htracker/img/ht-tab-dark.png">
   <script type="text/javascript">
     htracker.version = "` + config.VersionHash + `";
+    htracker.lang = "` + c.Request.Locale + `";
 	window.onload_hooks = [];
     window.onload = htracker.Boot();
   </script>

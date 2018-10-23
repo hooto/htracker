@@ -1,23 +1,14 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand navbar-dark bg-dark">
   <a class="navbar-brand" href="/htracker/">
     <img src="/htracker/~/htracker/img/ht-topnav-light.png" width="30" height="30">
   </a>
   <a class="navbar-brand" href="/htracker/">Perf Tracker</a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul id="htracker-nav" class="navbar-nav mr-auto" style="margin-left: 30px">
-      <li class="nav-item l4i-nav-item">
-        <a class="nav-link" href="#proj/index">Projects</a>
-      </li>
-      <li class="nav-item l4i-nav-item">
-        <a class="nav-link" href="#proc/index">Processes</a>
-      </li>
-    </ul>
-    <span class="navbar-text">
-        <a class="" href="#user/sign-out" onclick="htracker.UserSignOut()">Sign Out</a>
-    </span>
+  <div id="htracker-nav" class="navbar-nav mr-auto" style="margin-left: 30px">
+    <a class="nav-item nav-link l4i-nav-item" href="#proj/index">{[=l4i.T("Projects")]}</a>
+    <a class="nav-item nav-link l4i-nav-item" href="#proc/index">{[=l4i.T("Processes")]}</a>
+  </div>
+  <div class="navbar-text">
+    <a class="" href="#user/sign-out" onclick="htracker.UserSignOut()">{[=l4i.T("Sign Out")]}</a>
   </div>
 </nav>
 

@@ -33,8 +33,7 @@ htrackerProc.Index = function() {
 
 htrackerProc.ListRefresh = function() {
 
-
-    var elem = document.getElementById("htracker-proc-list");
+    var elem = document.getElementById("htracker-proc-list-box");
     if (!elem) {
         // if (htrackerProc.listAutoRefreshTimer) {
         // 	clearInterval(htrackerProc.listAutoRefreshTimer);
@@ -65,8 +64,8 @@ htrackerProc.ListRefresh = function() {
                 }
 
                 l4iTemplate.Render({
-                    dstid: "htracker-proc-list",
-                    tplid: "htracker-proc-list-tpl",
+                    dstid: "htracker-proc-list-box",
+                    tplid: "htracker-proc-list-box-tpl",
                     data: data,
                 });
                 htrackerProc.listLastUpdated = data.updated;
@@ -88,7 +87,7 @@ htrackerProc.ListRefresh = function() {
 
 
 htrackerProc.ListRefreshQuery = function() {
-    $("#htracker-proc-list-status-msg").text("search ...");
+    $("#htracker-proc-list-status-msg").text(l4i.T("Search") + " ...");
     htrackerProc.ListRefresh();
 }
 
@@ -98,7 +97,8 @@ htrackerProc.EntryView = function(pid) {
         callback: function(err, data) {
 
             if (err) {
-                return l4iAlert.Open("error", "Failed to get process (#" + pid + ")");
+                return l4iAlert.Open("error",
+                    l4i.T("Failed to get %s", l4i.T("Process")));
             }
 
             if (data.error) {
@@ -109,17 +109,17 @@ htrackerProc.EntryView = function(pid) {
 
             l4iModal.Open({
                 id: "htracker-proc-projnew",
-                title: "Process Overview",
+                title: l4i.T("Process Overview"),
                 data: data,
                 tplid: "htracker-proc-entry-tpl",
                 width: 900,
                 height: 500,
                 buttons: [{
-                    title: "Trace by PID",
+                    title: l4i.T("Trace by %s", l4i.T("Process ID")),
                     onclick: "htrackerProc.TraceByPid()",
                     style: "btn-primary",
                 }, {
-                    title: "Trace by Name",
+                    title: l4i.T("Trace by %s", l4i.T("Process Name")),
                     onclick: "htrackerProc.TraceByName()",
                     style: "btn-primary",
                 // }, {
@@ -127,7 +127,7 @@ htrackerProc.EntryView = function(pid) {
                 //     onclick: "htrackerProc.TraceByCommand()",
                 //     style: "btn-primary",
                 }, {
-                    title: "Cancel",
+                    title: l4i.T("Cancel"),
                     onclick: "l4iModal.Close()",
                 }],
             });

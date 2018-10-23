@@ -19,8 +19,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+	// "time"
 
+	"github.com/hooto/hlang4g/hlang"
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/hooto/httpsrv"
 
@@ -38,13 +39,13 @@ var (
 
 func main() {
 
-	defer func() {
-		if err := recover(); err != nil {
-			hlog.Printf("fatal", "Server/Panic %s", err)
-		}
-		hlog.Flush()
-		time.Sleep(200e6)
-	}()
+	// defer func() {
+	// 	if err := recover(); err != nil {
+	// 		hlog.Printf("fatal", "Server/Panic %s", err)
+	// 	}
+	// 	hlog.Flush()
+	// 	time.Sleep(200e6)
+	// }()
 
 	if err := config.Setup(version, release); err != nil {
 		hlog.Printf("fatal", "Config/Setup %s", err.Error())
@@ -61,12 +62,20 @@ func main() {
 	go worker.Start()
 
 	var (
-		hs   = httpsrv.NewService()
 		quit = make(chan os.Signal, 2)
+		hs   = httpsrv.NewService()
+		v1m  = v1.NewModule()
 	)
 
+	// i18n
+	hlang.StdLangFeed.LoadMessages(config.Prefix+"/i18n/en.json", true)
+	hlang.StdLangFeed.LoadMessages(config.Prefix+"/i18n/zh-CN.json", true)
+	if hlang.StdLangFeed.Init() {
+		v1m.ControllerRegister(new(hlang.Langsrv))
+	}
+
 	// register module to httpsrv
-	hs.ModuleRegister("/htracker/v1", v1.NewModule())
+	hs.ModuleRegister("/htracker/v1", v1m)
 	hs.ModuleRegister("/htracker", frontend.NewModule())
 	hs.ModuleRegister("/", frontend.NewModule())
 

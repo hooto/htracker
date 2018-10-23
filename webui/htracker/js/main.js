@@ -18,7 +18,7 @@ var h3tracker = {
     base: "/htracker/",
     api: "/htracker/v1/",
     basetpl: "/htracker/~/htracker/tpl/",
-    sys_version_sign: "1.0",
+    version: "0.1",
     debug: true,
     hotkey_ctrl_s: null,
     OpToolActive: null,
@@ -26,7 +26,7 @@ var h3tracker = {
 }
 
 h3tracker.urlver = function(debug_off) {
-    var u = "?_v=" + h3tracker.sys_version_sign;
+    var u = "?_v=" + h3tracker.version;
     if (!debug_off && h3tracker.debug) {
         u += "&_=" + Math.random();
     }
@@ -80,15 +80,24 @@ h3tracker.Boot = function() {
 
 h3tracker.load = function() {
 
+
     l4i.UrlEventRegister("proc/index", htrackerProc.Index, "htracker-nav");
     l4i.UrlEventRegister("proj/index", htrackerProj.Index, "htracker-nav");
 
     seajs.use(["ep"], function(EventProxy) {
 
-        var ep = EventProxy.create("tpl", "data", function(tpl, data) {
+        var ep = EventProxy.create("tpl", "data", "lang", function(tpl, data, lang) {
+
+            if (lang && lang.items) {
+                l4i.LangSync(lang.items, lang.locale);
+            }
+
+            if (!h3tracker.userLoginValid(data)) {
+                return;
+            }
 
             if (!data.access_token || data.access_token.length < 10) {
-                return h3tracker.AlertUserLogin();
+                return h3tracker.UserLogin();
             }
 
             htracker.ModuleNavbarLeftRefresh("htracker-proj-proclist-menus");
@@ -114,31 +123,39 @@ h3tracker.load = function() {
             callback: ep.done("tpl"),
         });
 
+        htracker.ApiCmd("langsrv/locale", {
+            callback: ep.done("lang"),
+        });
+
         htracker.ApiCmd("auth/session", {
             callback: ep.done("data"),
         });
     });
 }
 
-h3tracker.login_init_tpl = '<div id="htracker-user-login" class="alert"></div>\
+h3tracker.login_init_tpl = function() {
+    return '<div id="htracker-user-login" class="alert"></div>\
 <div class="form-group">\
-  <label>Password</label>\
-  <input type="password" class="form-control inputfocus" id="htracker-user-auth" placeholder="Enter password">\
+  <label>' + l4i.T("Password") + '</label>\
+  <input type="password" class="form-control inputfocus" id="htracker-user-auth" placeholder="">\
 </div>\
 <div class="form-group">\
-  <label>Retype Password</label>\
-  <input type="password" class="form-control" id="htracker-user-auth-confirm" placeholder="Retype password">\
+  <label>' + l4i.T("Retype Password") + '</label>\
+  <input type="password" class="form-control" id="htracker-user-auth-confirm" placeholder="">\
 </div>';
+}
 
-h3tracker.login_tpl = '<div id="htracker-user-login" class="alert"></div>\
+h3tracker.login_tpl = function() {
+    return '<div id="htracker-user-login" class="alert"></div>\
+<form onsubmit="htracker.UserLoginCommit(); return false;">\
 <div class="form-group">\
-  <label>Password</label>\
-  <input type="password" class="form-control inputfocus" id="htracker-user-auth" placeholder="Enter password">\
-</div>';
+  <label>' + l4i.T("Password") + '</label>\
+  <input type="password" class="form-control inputfocus" id="htracker-user-auth" placeholder="">\
+</div>\
+</form>';
+}
 
-h3tracker.login_relogin = "You are not logged in, or your login session has expired. Please sign in again";
-
-h3tracker.AlertUserLogin = function(options) {
+h3tracker.UserLogin = function(options) {
 
     var elem = document.getElementById("htracker-user-login");
     if (elem) {
@@ -147,28 +164,29 @@ h3tracker.AlertUserLogin = function(options) {
 
     options = options || {};
 
-    var tpl = h3tracker.login_tpl;
-    var msg = h3tracker.login_relogin;
+    var tpl = h3tracker.login_tpl();
+    var msg = l4i.T("user-login-msg");
+
     var height = 300;
-    var title = "SIGN IN"
+    var title = l4i.T("SIGN IN");
     var alert_type = "info";
 
     if (options.init) {
-        tpl = h3tracker.login_init_tpl;
-        msg = "This is your first login, please set a password";
-        title = "Save";
+        tpl = h3tracker.login_init_tpl();
+        msg = l4i.T("first-login-msg");
+        title = l4i.T("Save");
         height += 60;
         alert_type = "warn";
     }
 
     l4iModal.Open({
-        title: "Sign in with your Account",
+        title: l4i.T("Sign in with your Account"),
         tplsrc: tpl,
         width: 600,
         height: height,
         buttons: [{
             title: title,
-            onclick: "htracker.LoginCommit()",
+            onclick: "htracker.UserLoginCommit()",
             style: "btn-primary",
         }],
         callback: function(err, data) {
@@ -177,7 +195,7 @@ h3tracker.AlertUserLogin = function(options) {
     });
 }
 
-h3tracker.LoginCommit = function() {
+h3tracker.UserLoginCommit = function() {
 
     var req = {};
     var alert_id = "#htracker-user-login";
@@ -214,7 +232,7 @@ h3tracker.LoginCommit = function() {
                 return l4i.InnerAlert(alert_id, 'error', msg);
             }
 
-            l4i.InnerAlert(alert_id, 'alert-success', "Successfully Sign-on. Page redirecting ...");
+            l4i.InnerAlert(alert_id, 'alert-success', l4i.T("Successfully Sign-on. Page redirecting ..."));
 
             window.setTimeout(function() {
                 window.location = "/htracker/";
@@ -226,7 +244,7 @@ h3tracker.LoginCommit = function() {
 h3tracker.UserSignOut = function() {
     htracker.ApiCmd("auth/sign-out", {
         callback: function(err, data) {
-            l4iAlert.Open("info", "Successfully Sign-out. Page redirecting ...");
+            l4iAlert.Open("info", l4i.T("Successfully Sign-out. Page redirecting ..."));
             window.setTimeout(function() {
                 window.location = "/htracker/";
             }, 3000);
@@ -258,6 +276,22 @@ h3tracker.Ajax = function(url, options) {
     l4i.Ajax(url, options)
 }
 
+h3tracker.userLoginValid = function(data) {
+    if (data && typeof data === "object") {
+        if (data.kind == "AuthSession" && data.action == h3tracker.UserLoginInit) {
+            h3tracker.UserLogin({
+                init: true
+            });
+            return false;
+        }
+        if (data.error && data.error.code == "401") {
+            h3tracker.UserLogin();
+            return false;
+        }
+    }
+    return true;
+}
+
 h3tracker.ApiCmd = function(url, options) {
     if (options.nocache === undefined) {
         options.nocache = true;
@@ -282,19 +316,14 @@ h3tracker.ApiCmd = function(url, options) {
             }
         }
 
-        if (data && typeof data === "object") {
-            if (data.kind == "AuthSession" && data.action == h3tracker.UserLoginInit) {
-                return h3tracker.AlertUserLogin({
-                    init: true
-                });
+        if (url != "auth/session") {
+            if (!h3tracker.userLoginValid(data)) {
+                return;
             }
-            if (data.error && data.error.code == "401") {
-                return h3tracker.AlertUserLogin();
-            }
-        }
 
-        if (err == "Unauthorized") {
-            return h3tracker.AlertUserLogin();
+            if (err == "Unauthorized") {
+                return h3tracker.UserLogin();
+            }
         }
 
         if (appcb) {
@@ -319,7 +348,7 @@ h3tracker.Loader = function(target, uri, options) {
         async: false,
         callback: function(err, data) {
             if (err) {
-                return alert("network error");
+                return alert(l4i.T("network error"));
             }
             $(target).html(data);
             if (options && options.callback) {
@@ -453,7 +482,13 @@ h3tracker.ModuleNavbarMenuRefresh = function(div_target, cb) {
     if (!elem) {
         return;
     }
-    $("#htracker-module-navbar-menus").html(elem.innerHTML);
+    // $("#htracker-module-navbar-menus").html(elem.innerHTML);
+    l4iTemplate.Render({
+        dstid: "htracker-module-navbar-menus",
+        tplid: div_target,
+        data: {},
+    });
+
     l4i.UrlEventClean("htracker-module-navbar-menus");
 
     if (cb && typeof cb === "function") {
@@ -476,7 +511,12 @@ h3tracker.ModuleNavbarLeftRefresh = function(div_target, cb) {
         $("#htracker-module-navbar").prepend("<ul id='htracker-module-navbar-left' class='htracker-module-nav'></ul>");
     }
 
-    $("#htracker-module-navbar-left").html(elem.innerHTML);
+    // $("#htracker-module-navbar-left").html(elem.innerHTML);
+    l4iTemplate.Render({
+        dstid: "htracker-module-navbar-left",
+        tplid: div_target,
+        data: {},
+    });
 
     if (cb && typeof cb === "function") {
         cb(null);

@@ -5,7 +5,7 @@
     <div id="htracker-projlist-more" style="display: none; padding: 0 0 10px 10px">
       <button class="btn btn-primary btn-sm"
         onclick="htrackerProj.ListMore()">
-        More items ...
+        {[=l4i.T("More items")]} ...
       </button>
     </div>
   </div>
@@ -13,10 +13,10 @@
 
 <script type="text/html" id="htracker-projlist-menus">
 <li>
-  <button class="btn btn-sm btn-dark" id="htracker-projlist-menus-active">Current Active Projects</button>
+  <button class="btn btn-sm btn-dark" id="htracker-projlist-menus-active">{[=l4i.T("Current Active Projects")]}</button>
 </li>
 <li>
-  <button class="btn btn-sm" id="htracker-projlist-menus-history">History Projects</button>
+  <button class="btn btn-sm" id="htracker-projlist-menus-history">{[=l4i.T("History Projects")]}</button>
 </li>
 </script>
 
@@ -24,7 +24,7 @@
 <li>
   <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.NewEntry()">
     <span class="icon16 icono-plus"></span>
-    New Project
+    {[=l4i.T("New Project")]}
   </button>
 </li>
 </script>
@@ -33,11 +33,11 @@
 <table class="table table-hover valign-middle">
 <thead>
   <tr>
-    <th>Name</th>
-    <th>Filter</th>
-    <th>Created</th>
-    {[? it._history]}<th>Closed</th>{[?]}
-    <th>Hit Processes</th>
+    <th>{[=l4i.T("Project Name")]}</th>
+    <th>{[=l4i.T("Filter")]}</th>
+    <th>{[=l4i.T("Created")]}</th>
+    {[? it._history]}<th>{[=l4i.T("Closed")]}</th>{[?]}
+    <th>{[=l4i.T("Hit Processes")]}</th>
     <th width="30"></th>
   </tr>
 </thead>
@@ -58,7 +58,7 @@
     {[if (v.proc_num > 0 || it._history) {]}
       {[=v.proc_num]}
     {[} else {]}
-      waiting
+      {[=l4i.T("waiting")]}
     {[}]}
   </td>
   <td align="right">

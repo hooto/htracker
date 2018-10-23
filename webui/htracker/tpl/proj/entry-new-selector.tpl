@@ -1,14 +1,14 @@
 <div class="htracker-modal-container">
 
 <div class="alert alert-primary" >
-  Select a rule for this Project to match the required one or multi processes.
+{[=l4i.T("project-new-select-msg")]}
 </div>
 
 <table class="table table-hover valign-middle">
 
 <tr class="htracker-div-hover" onclick="htrackerProj.NewEntryProcId()">
   <td>
-    Specific process ID
+    {[=l4i.T("Specific process ID")]}
   </td>
   <td align="right">
     <i class="icono-caretRight" style="zoom: 85%; margin-right:0;"></i>
@@ -17,7 +17,7 @@
 
 <tr class="htracker-div-hover" onclick="htrackerProj.NewEntryProcName()">
   <td>
-    Specific process Name
+    {[=l4i.T("Specific process Name")]}
   </td>
   <td align="right">
     <i class="icono-caretRight" style="zoom: 85%; margin-right:0;"></i>
@@ -26,7 +26,7 @@
 
 <tr class="htracker-div-hover" onclick="htrackerProj.NewEntryProcCommand()">
   <td>
-    Command line contains the specific string
+    {[=l4i.T("Specific string that the command line contains")]}
   </td>
   <td align="right">
     <i class="icono-caretRight" style="zoom: 85%; margin-right:0;"></i>

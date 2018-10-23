@@ -7,7 +7,7 @@
 <li>
   <button type="button" class="btn btn-primary btn-sm" onclick="htrackerProj.Index()">
     <span class="icon16 icono-caretLeftCircle"></span>
-    <span>Back to Project List</span>
+    <span>{[=l4i.T("Back to Project List")]}</span>
   </button>
 </li>
 </script>
@@ -17,7 +17,7 @@
 <li>
   <button class="btn btn-outline-danger btn-sm" onclick="htrackerProj.EntryDel()">
     <span class="icon16 icono-cross"></span>
-    Remove this Project
+    {[=l4i.T("Remove this Project")]}
   </button>
 </li>
 </script>
@@ -27,10 +27,10 @@
 <thead>
   <tr>
     <th>ID</th>
-    <th width="30%">Command</th>
-    <th>Created</th>
-    {[? it._hit]}<th>Updated</th>{[?]}
-    {[? it._exit]}<th>Exited</th>{[?]}
+    <th width="30%">{[=l4i.T("Command")]}</th>
+    <th>{[=l4i.T("Created")]}</th>
+    {[? it._hit]}<th>{[=l4i.T("Updated")]}</th>{[?]}
+    {[? it._exit]}<th>{[=l4i.T("Exited")]}</th>{[?]}
     <th width="360px"></th>
   </tr>
 </thead>
@@ -52,11 +52,11 @@
   <td align="right">
     <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcDyTraceList('{[=v.proj_id]}', {[=v.pid]}, {[=v.created]})">
       <i class="icon16 icono-barChart"></i>
-      Dynamic Trace
+      {[=l4i.T("Dynamic Trace")]}
     </button>
     <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcStats('{[=v.proj_id]}', {[=v.pid]}, {[=v.created]})">
       <i class="icon16 icono-areaChart"></i>
-      Resource Usage
+      {[=l4i.T("Resource Usage")]}
     </button>
   </td>
 </tr>

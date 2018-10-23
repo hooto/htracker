@@ -39,12 +39,12 @@ body {
   padding-right: 0;
 }
 
-#htracker-nav>li {
-  padding-left: 10px;
-  padding-right: 10px;
+#htracker-nav>.nav-item {
+  padding-left: 15px;
+  padding-right: 15px;
 }
 
-#htracker-nav>li>a {
+#htracker-nav>a.nav-item {
   font-size: 1.2em;
 }
 

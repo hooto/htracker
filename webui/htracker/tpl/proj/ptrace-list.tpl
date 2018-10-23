@@ -1,14 +1,16 @@
 
 <div class="htracker-div-container alert less-hide" id="htracker-proj-ptrace-list-alert"></div>
 
-<div class="htracker-div-light">
+<div class="htracker-div-light" id="htracker-proj-ptrace-list-box"></div>
+
+<script type="text/html" id="htracker-proj-ptrace-list-box-tpl">
     <table class="table table-hover valign-middle">
       <thead>
       <tr>
-        <th>Start Time</th>
-        <th>End Time</th>
-        <th>Log Size</th>
-        <th style="text-align:right">Flame Graph</th>
+        <th>{[=l4i.T("Start Time")]}</th>
+        <th>{[=l4i.T("End Time")]}</th>
+        <th>{[=l4i.T("Log Size")]}</th>
+        <th style="text-align:right">{[=l4i.T("Flame Graph")]}</th>
       </tr>
       </thead>
       <tbody id="htracker-proj-ptrace-list"></tbody>
@@ -17,16 +19,16 @@
   <div id="htracker-proj-ptrace-list-more" style="display: none; padding: 0 0 10px 10px">
      <button class="btn btn-primary btn-sm"
 	   onclick="htrackerProj.ProcDyTraceListMore()">
-       More items ...
+       {[=l4i.T("More items")]} ...
 	 </button>
   </div>
-</div>
+</script>
 
 <script type="text/html" id="htracker-proj-ptrace-list-menus">
 <li>
   <button type="button" class="btn btn-primary btn-sm" onclick="htrackerProj.ProcIndex()">
     <span class="icon16 icono-caretLeftCircle"></span>
-    Back to Hit Process List</button>
+    {[=l4i.T("Back to Process List")]}</button>
 </li>
 </script>
 

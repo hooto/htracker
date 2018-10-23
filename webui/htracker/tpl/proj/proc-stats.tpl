@@ -17,7 +17,8 @@
 <li>
   <button type="button" class="btn btn-primary btn-sm" onclick="htrackerProj.ProcIndex()">
     <span class="icon16 icono-caretLeftCircle"></span>
-    Back to Hit Process List</button>
+    {[=l4i.T("Back to Process List")]}
+  </button>
 </li>
 </script>
 

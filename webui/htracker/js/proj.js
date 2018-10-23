@@ -28,27 +28,33 @@ var htrackerProj = {
             "datasets": [],
         },
     },
-    listMenus: [{
-        name: "Current Active Projects",
-        uri: "proj/list/active",
-    }, {
-        name: "History Projects",
-        uri: "proj/list/history",
-    }],
     listMenuActive: null,
     listLimit: 50,
     listOffset: null,
     listAutoRefreshTimer: null,
-    procListMenus: [{
-        name: "Current Running Processes",
-        uri: "proj/proc/hit",
-    }, {
-        name: "Exited Processes",
-        uri: "proj/proc/exit",
-    }],
     procListMenuActive: null,
     procTraceListOffset: 0,
     procTraceListLimit: 50,
+}
+
+htrackerProj.listMenus = function() {
+    return [{
+        name: l4i.T("Current Active Projects"),
+        uri: "proj/list/active",
+    }, {
+        name: l4i.T("History Projects"),
+        uri: "proj/list/history",
+    }];
+}
+
+htrackerProj.procListMenus = function() {
+    return [{
+        name: l4i.T("Current Running Processes"),
+        uri: "proj/proc/hit",
+    }, {
+        name: l4i.T("Exited Processes"),
+        uri: "proj/proc/exit",
+    }];
 }
 
 htrackerProj.Index = function() {
@@ -62,7 +68,7 @@ htrackerProj.Index = function() {
 
     htracker.Loader("#htracker-module-content", "proj/list", {
         callback: function() {
-            htracker.ModuleNavbarMenu("projmenus", htrackerProj.listMenus);
+            htracker.ModuleNavbarMenu("projmenus", htrackerProj.listMenus());
             l4i.UrlEventRegister("proj/list/active", htrackerProj.ListRefreshActive, "htracker-module-navbar-menus");
             l4i.UrlEventRegister("proj/list/history", htrackerProj.ListRefreshHistory, "htracker-module-navbar-menus");
             l4i.UrlEventHandler(htrackerProj.listMenuActive, true);
@@ -135,7 +141,8 @@ htrackerProj.ListRefresh = function(list_active, options) {
             }
             if (!data.items || data.items.length < 1) {
                 $("#htracker-projlist").empty();
-                return l4i.InnerAlert(alert_id, "warn", "No Project Found");
+                return l4i.InnerAlert(alert_id, "warn",
+                    l4i.T("No %s Found", l4i.T("Project")));
             }
 
             var waiting = false;
@@ -162,8 +169,10 @@ htrackerProj.ListRefresh = function(list_active, options) {
                 data._history = true;
             }
 
-            var elemt = document.getElementById("htracker-projlist");
-            if (!elemt) {
+            var append = false;
+            if (options.offset) {
+                append = true;
+            } else {
                 l4iTemplate.Render({
                     dstid: "htracker-projlist-table",
                     tplid: "htracker-projlist-table-tpl",
@@ -171,11 +180,6 @@ htrackerProj.ListRefresh = function(list_active, options) {
                         _history: data._history,
                     },
                 });
-            }
-
-            var append = false;
-            if (options.offset) {
-                append = true;
             }
             l4iTemplate.Render({
                 dstid: "htracker-projlist",
@@ -222,7 +226,8 @@ htrackerProj.EntryView = function(id) {
         callback: function(err, data) {
 
             if (err) {
-                return l4iAlert.Open("error", "Failed to get proj (#" + pid + ")");
+                return l4iAlert.Open("error",
+                    l4i.T("Failed to get %s", l4i.T("Project")));
             }
 
             if (data.error) {
@@ -233,17 +238,17 @@ htrackerProj.EntryView = function(id) {
 
             l4iModal.Open({
                 id: "htracker-proj-new",
-                title: "Project Overview",
+                title: l4i.T("Project Overview"),
                 data: data,
                 tplid: "htracker-proj-entry-tpl",
                 width: 900,
                 height: 500,
                 buttons: [{
-                    title: "Trace by Name",
+                    title: l4i.T("Trace by %s", l4i.T("Process Name")),
                     onclick: "htrackerProj.TraceByName()",
                     style: "btn-primary",
                 }, {
-                    title: "Close",
+                    title: l4i.T("Close"),
                     onclick: "l4iModal.Close()",
                 }],
             });
@@ -282,12 +287,13 @@ htrackerProj.NewEntrySelector = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "New Project",
+        title: l4i.T("New Project"),
         tpluri: htracker.TplPath("proj/entry-new-selector"),
         width: 900,
         height: 450,
+        data: {},
         buttons: [{
-            title: "Close",
+            title: l4i.T("Close"),
             onclick: "l4iModal.Close()",
         }],
     });
@@ -302,7 +308,7 @@ htrackerProj.NewEntryProcId = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Filter by Process ID",
+        title: l4i.T("Filter by %s", l4i.T("Process ID")),
         data: {
             name: "",
             filter: options.filter,
@@ -312,7 +318,7 @@ htrackerProj.NewEntryProcId = function(options) {
         height: 450,
         backEnable: true,
         buttons: [{
-            title: "Next",
+            title: l4i.T("Next"),
             onclick: "htrackerProj.NewEntryCommit()",
             style: "btn-primary",
         }],
@@ -330,7 +336,7 @@ htrackerProj.NewEntryProcName = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Filter by Process Name",
+        title: l4i.T("Filter by %s", l4i.T("Process Name")),
         data: {
             name: "",
             filter: options.filter,
@@ -340,7 +346,7 @@ htrackerProj.NewEntryProcName = function(options) {
         height: 450,
         backEnable: true,
         buttons: [{
-            title: "Next",
+            title: l4i.T("Next"),
             onclick: "htrackerProj.NewEntryCommit()",
             style: "btn-primary",
         }],
@@ -358,7 +364,7 @@ htrackerProj.NewEntryProcCommand = function(options) {
 
     l4iModal.Open({
         id: options.modal_id,
-        title: "Filter by Process Command line content",
+        title: l4i.T("proc-filter-by-cmd-msg"),
         data: {
             name: "",
             filter: options.filter,
@@ -368,7 +374,7 @@ htrackerProj.NewEntryProcCommand = function(options) {
         height: 450,
         backEnable: true,
         buttons: [{
-            title: "Next",
+            title: l4i.T("Next"),
             onclick: "htrackerProj.NewEntryCommit()",
             style: "btn-primary",
         }],
@@ -420,12 +426,11 @@ htrackerProj.NewEntryCommit = function() {
                 return l4i.InnerAlert(alert_id, 'error', msg);
             }
 
-            // l4i.InnerAlert(alert_id, 'ok', "Successful operation, the system will take 2 minutes to collect data, please wait ...");
             l4iModal.Open({
                 title: "OK",
                 height: 200,
                 backEnable: false,
-                tplsrc: '<div class="alert alert-success">Successful operation, the system will take 2 minutes to collect data, ...</div>',
+                tplsrc: '<div class="alert alert-success">' + l4i.T("project-created-msg") + '</div>',
             });
 
             window.setTimeout(function() {
@@ -448,16 +453,16 @@ htrackerProj.EntryDel = function(id, is_confirm) {
 
     if (!is_confirm) {
         l4iModal.Open({
-            title: "Remove this Project",
-            tplsrc: '<div id="hpm-node-del" class="alert alert-danger">Are you sure to delete this Project?</div>',
+            title: l4i.T("Remove this Project"),
+            tplsrc: '<div id="hpm-node-del" class="alert alert-danger">' + l4i.T("Are you sure to remove this Project") + '?</div>',
             width: 600,
             height: 200,
             buttons: [{
-                title: "Confirm and Remove",
+                title: l4i.T("Confirm and Remove"),
                 onclick: "htrackerProj.EntryDel(\"" + id + "\", true)",
                 style: "btn-danger",
             }, {
-                title: "Cancel",
+                title: l4i.T("Cancel"),
                 onclick: "l4iModal.Close()",
                 style: "btn-primary",
             }],
@@ -483,7 +488,7 @@ htrackerProj.EntryDel = function(id, is_confirm) {
                 return l4i.InnerAlert(alert_id, 'error', msg);
             }
 
-            l4i.InnerAlert(alert_id, 'ok', "Successful operation");
+            l4i.InnerAlert(alert_id, 'ok', l4i.T("Successful operation"));
             window.setTimeout(function() {
                 htrackerProj.Index();
                 l4iModal.Close();
@@ -523,7 +528,7 @@ htrackerProj.ProcIndex = function(proj_id) {
                 return htrackerProj.ProcListExit();
             }
 
-            htracker.ModuleNavbarMenu("projProcMenus", htrackerProj.procListMenus);
+            htracker.ModuleNavbarMenu("projProcMenus", htrackerProj.procListMenus());
             l4i.UrlEventRegister("proj/proc/hit", htrackerProj.ProcListHit, "htracker-module-navbar-menus");
             l4i.UrlEventRegister("proj/proc/exit", htrackerProj.ProcListExit, "htracker-module-navbar-menus");
             l4i.UrlEventHandler(htrackerProj.procListMenuActive, true);
@@ -591,7 +596,9 @@ htrackerProj.ProcList = function(proj_id, list_active) {
             }
             if (!data.items) {
                 $("#htracker-proj-proclist").empty();
-                return l4i.InnerAlert(alert_id, 'error', "No Process Found");
+                console.log(l4i.T("Process"));
+                return l4i.InnerAlert(alert_id, 'error',
+                    l4i.T("No %s Found", l4i.T("Process")));
             }
 
             for (var i in data.items) {
@@ -618,7 +625,7 @@ htrackerProj.ProcList = function(proj_id, list_active) {
         });
 
         ep.fail(function(err) {
-            alert("NetWork error, Please try again later");
+            alert(l4i.T("Network error, Please try again later"));
         });
 
         // htracker.TplCmd("proj/proc-list", {
@@ -1042,7 +1049,7 @@ htrackerProj.NodeStats = function(time_past) {
         });
 
         ep.fail(function(err) {
-            alert("Network Connection Error, Please try again later (EC:htracker-proj-node)");
+            alert(l4i.T("Network error, Please try again later"));
         });
 
         htracker.ApiCmd("proj/proc-stats?" + stats_url, {
@@ -1095,12 +1102,22 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
                 htracker.OpToolsClean("#htracker-proj-proclist-optools");
             }
 
+            var box = document.getElementById("htracker-proc-list");
+            if (!box) {
+                l4iTemplate.Render({
+                    dstid: "htracker-proj-ptrace-list-box",
+                    tplid: "htracker-proj-ptrace-list-box-tpl",
+                    data: {},
+                });
+            }
+
             if (data.error) {
                 return l4i.InnerAlert(alert_id, 'error', data.error.message);
             }
             if (!data.items) {
                 if (!options.offset) {
-                    return l4i.InnerAlert(alert_id, 'warn', "No Process/Trace Found");
+                    return l4i.InnerAlert(alert_id, 'warn',
+                        l4i.T("No %s Found", "Process/Trace"));
                 }
                 data.items = [];
             }
@@ -1143,7 +1160,7 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
         });
 
         ep.fail(function(err) {
-            alert("NetWork error, Please try again later");
+            alert(l4i.T("Network error, Please try again later"));
         });
 
         if (options.offset) {
@@ -1188,7 +1205,7 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
 
 
     var buttons = [{
-        title: "Open in new tab",
+        title: l4i.T("Open in new tab"),
         href: api_svg,
     }];
 
@@ -1201,7 +1218,7 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
     }
     */
     buttons.push({
-        title: "Close",
+        title: l4i.T("Close"),
         onclick: "l4iModal.Close()",
     });
 
