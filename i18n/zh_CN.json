@@ -1,0 +1,281 @@
+{
+  "locale": "zh-CN",
+  "items": [
+    {
+      "key": "are you sure to remove this project",
+      "val": "你确定移除这个项目"
+    },
+    {
+      "key": "back",
+      "val": "返回"
+    },
+    {
+      "key": "back to process list",
+      "val": "返回进程列表"
+    },
+    {
+      "key": "back to project list",
+      "val": "返回项目列表"
+    },
+    {
+      "key": "cancel",
+      "val": "取消"
+    },
+    {
+      "key": "close",
+      "val": "关闭"
+    },
+    {
+      "key": "closed",
+      "val": "关闭"
+    },
+    {
+      "key": "command",
+      "val": "命令"
+    },
+    {
+      "key": "command match string",
+      "val": "命令匹配字符串"
+    },
+    {
+      "key": "confirm and remove",
+      "val": "确认并移除"
+    },
+    {
+      "key": "cpu percent",
+      "val": "CPU 百分率"
+    },
+    {
+      "key": "created",
+      "val": "创建"
+    },
+    {
+      "key": "current active projects",
+      "val": "当前活动项目"
+    },
+    {
+      "key": "current running processes",
+      "val": "当前运行中的进程"
+    },
+    {
+      "key": "dynamic trace",
+      "val": "动态追踪"
+    },
+    {
+      "key": "end time",
+      "val": "结束时间"
+    },
+    {
+      "key": "exited",
+      "val": "退出"
+    },
+    {
+      "key": "exited processes",
+      "val": "已退出的进程"
+    },
+    {
+      "key": "failed to get %s",
+      "val": "获取 %s 失败"
+    },
+    {
+      "key": "filter",
+      "val": "过滤"
+    },
+    {
+      "key": "filter by %s",
+      "val": "通过 %s 过滤"
+    },
+    {
+      "key": "first-login-msg",
+      "val": "这是你第一次登录, 请设置一个密码"
+    },
+    {
+      "key": "flame graph",
+      "val": "火焰图"
+    },
+    {
+      "key": "history projects",
+      "val": "历史项目"
+    },
+    {
+      "key": "hit processes",
+      "val": "匹配进程"
+    },
+    {
+      "key": "log size",
+      "val": "日志量"
+    },
+    {
+      "key": "memory",
+      "val": "内存"
+    },
+    {
+      "key": "more items",
+      "val": "更多条目"
+    },
+    {
+      "key": "name",
+      "val": "名称"
+    },
+    {
+      "key": "network error",
+      "val": "网络错误"
+    },
+    {
+      "key": "network error, please try again later",
+      "val": "网络错误, 请稍后重试"
+    },
+    {
+      "key": "new project",
+      "val": "新建项目"
+    },
+    {
+      "key": "next",
+      "val": "下一步"
+    },
+    {
+      "key": "no %s found",
+      "val": "没有找到 %s"
+    },
+    {
+      "key": "open in new tab",
+      "val": "在新标签页打开"
+    },
+    {
+      "key": "overview",
+      "val": "概要"
+    },
+    {
+      "key": "password",
+      "val": "密码"
+    },
+    {
+      "key": "proc-filter-by-cmd-msg",
+      "val": "通过进程的命令行内容过滤"
+    },
+    {
+      "key": "process",
+      "val": "进程"
+    },
+    {
+      "key": "process id",
+      "val": "进程ID"
+    },
+    {
+      "key": "process name",
+      "val": "进程名"
+    },
+    {
+      "key": "process overview",
+      "val": "进程概要"
+    },
+    {
+      "key": "processes",
+      "val": "进程"
+    },
+    {
+      "key": "project",
+      "val": "项目"
+    },
+    {
+      "key": "project name",
+      "val": "项目名称"
+    },
+    {
+      "key": "project overview",
+      "val": "项目概要"
+    },
+    {
+      "key": "project-created-msg",
+      "val": "操作成功 (系统需要 2 分钟时间收集数据)"
+    },
+    {
+      "key": "project-new-select-msg",
+      "val": "选择一个规则用于为该项目匹配所需的一个或多个进程"
+    },
+    {
+      "key": "projects",
+      "val": "项目"
+    },
+    {
+      "key": "remove this project",
+      "val": "移除这个项目"
+    },
+    {
+      "key": "resource usage",
+      "val": "资源使用"
+    },
+    {
+      "key": "retype password",
+      "val": "密码二次确认"
+    },
+    {
+      "key": "save",
+      "val": "保存"
+    },
+    {
+      "key": "search",
+      "val": "搜索"
+    },
+    {
+      "key": "sign in",
+      "val": "登入"
+    },
+    {
+      "key": "sign in with your account",
+      "val": "登入你的账号"
+    },
+    {
+      "key": "sign out",
+      "val": "注销"
+    },
+    {
+      "key": "specific process id",
+      "val": "指定的进程ID"
+    },
+    {
+      "key": "specific process name",
+      "val": "指定的进程名"
+    },
+    {
+      "key": "specific string that the command line contains",
+      "val": "进程命令行包含指定的字符串"
+    },
+    {
+      "key": "start time",
+      "val": "开始时间"
+    },
+    {
+      "key": "successful operation",
+      "val": "操作成功"
+    },
+    {
+      "key": "successfully sign-on. page redirecting ...",
+      "val": "成功登入, 页面跳转中 ..."
+    },
+    {
+      "key": "successfully sign-out. page redirecting ...",
+      "val": "成功登出, 页面跳转中 ..."
+    },
+    {
+      "key": "trace by %s",
+      "val": "通过 %s 追踪"
+    },
+    {
+      "key": "updated",
+      "val": "更新"
+    },
+    {
+      "key": "user",
+      "val": "用户"
+    },
+    {
+      "key": "user-login-msg",
+      "val": "你当前没有登入或者你登入的时间已经过期, 请重新登入"
+    },
+    {
+      "key": "waiting",
+      "val": "等待中"
+    }
+  ]
+}

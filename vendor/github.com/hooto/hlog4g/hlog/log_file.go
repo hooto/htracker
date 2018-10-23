@@ -118,22 +118,22 @@ func fileOpenInit(tag string) (*os.File, error) {
 	flocker.Lock()
 	defer flocker.Unlock()
 
-	if len(*logDir) < 1 {
+	if len(logDir) < 1 {
 		return nil, errors.New("No -log_dir Setup")
 	}
 
-	if _, err := os.Stat(*logDir); err != nil {
+	if _, err := os.Stat(logDir); err != nil {
 		return nil, err
 	}
 
 	logName, link := logName(tag, time.Now())
 
-	fp, err := os.OpenFile(*logDir+"/"+logName,
+	fp, err := os.OpenFile(logDir+"/"+logName,
 		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 
 	if err == nil {
 
-		symlink := filepath.Join(*logDir, link)
+		symlink := filepath.Join(logDir, link)
 
 		os.Remove(symlink)           // ignore err
 		os.Symlink(logName, symlink) // ignore err

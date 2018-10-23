@@ -1,0 +1,25 @@
+{
+  "locale": "en",
+  "items": [
+    {
+      "key": "first-login-msg",
+      "val": "This is your first login, please set a password"
+    },
+    {
+      "key": "proc-filter-by-cmd-msg",
+      "val": "Filter by Command line content of the Process"
+    },
+    {
+      "key": "project-created-msg",
+      "val": "Successful operation (the system will take 2 minutes to collect data)"
+    },
+    {
+      "key": "project-new-select-msg",
+      "val": "Select a rule for this Project to match the required one or multi processes"
+    },
+    {
+      "key": "user-login-msg",
+      "val": "You are not logged in, or your login session has expired. Please sign in again"
+    }
+  ]
+}

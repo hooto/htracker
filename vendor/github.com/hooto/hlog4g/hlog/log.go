@@ -15,14 +15,14 @@
 package hlog
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hooto/hflag4g/hflag"
 )
 
 const (
@@ -41,11 +41,14 @@ var (
 	onceCmd   sync.Once
 	log_ws    = map[int]*logFileWriter{}
 
-	logDir      = flag.String("log_dir", "", "If non-empty, write log files in this directory")
-	logToStderr = flag.Bool("logtostderr", false, "log to standard error instead of files")
-	minLogLevel = flag.Int("minloglevel", 1, "Messages logged at a lower level than this"+
-		" don't actually get logged anywhere")
-	logToLevels = flag.Bool("logtolevels", false, "Write log to multi level files")
+	// If non-empty, write log files in this directory
+	logDir = ""
+	// log to standard error instead of files
+	logToStderr = false
+	// Messages logged at a lower level than this don't actually get logged anywhere
+	minLogLevel = 1
+	// Write log to multi level files
+	logToLevels = false
 )
 
 type entry struct {
@@ -60,75 +63,27 @@ type entry struct {
 
 func init() {
 
-	if !flag.Parsed() && len(os.Args) > 1 {
+	if v, ok := hflag.ValueOK("log_dir"); ok {
+		logDir = v.String()
+	}
 
-		for i := 1; i < len(os.Args); i++ {
+	if hflag.Value("logtostderr").String() == "true" {
+		logToStderr = true
+	}
 
-			if os.Args[i][0] != '-' {
-				continue
-			}
+	if v, ok := hflag.ValueOK("minloglevel"); ok {
+		minLogLevel = v.Int()
+	}
 
-			key, val, ok := args_parse(i)
-			if !ok {
-				continue
-			}
-
-			switch key {
-
-			case "log_dir":
-				*logDir = val
-
-			case "logtostderr":
-				if val == "true" {
-					*logToStderr = true
-				}
-
-			case "minloglevel":
-				if v, err := strconv.Atoi(val); err == nil {
-					*minLogLevel = v
-				}
-
-			case "logtolevels":
-				if val == "true" {
-					*logToLevels = true
-				}
-			}
-		}
+	if hflag.Value("logtolevels").String() == "true" {
+		logToLevels = true
 	}
 
 	levelInit()
 }
 
 func LogDirSet(path string) {
-	*logDir = path
-}
-
-func args_parse(i int) (string, string, bool) {
-
-	key := strings.ToLower(strings.TrimLeft(os.Args[i], "-"))
-
-	if si := strings.Index(key, "="); si > 0 {
-
-		if key[si+1:] != "" {
-			return key[:si], key[si+1:], true
-		}
-
-		key = key[:si]
-	}
-
-	if (i+2) > len(os.Args) || os.Args[i+1][0] == '-' {
-		return key, "", false
-	}
-
-	if val := strings.TrimLeft(os.Args[i+1], "="); val != "" {
-		return key, val, true
-	}
-
-	if (i+3) > len(os.Args) || os.Args[i+2][0] == '-' {
-		return key, "", false
-	}
-
-	return key, os.Args[i+2], true
+	logDir = path
 }
 
 func LevelConfig(ls []string) {
@@ -167,18 +122,18 @@ func levelInit() {
 		}
 	}
 
-	if *minLogLevel < 0 {
-		*minLogLevel = 0
-	} else if *minLogLevel >= len(levelMap) {
-		*minLogLevel = len(levelMap) - 1
+	if minLogLevel < 0 {
+		minLogLevel = 0
+	} else if minLogLevel >= len(levelMap) {
+		minLogLevel = len(levelMap) - 1
 	}
 
 	//
 	for tag, level := range levelMap {
 
 		//
-		if (*logToLevels == true && level >= *minLogLevel) ||
-			(*logToLevels == false && level == *minLogLevel) {
+		if (logToLevels == true && level >= minLogLevel) ||
+			(logToLevels == false && level == minLogLevel) {
 
 			levelOut[tag] = level
 		}
@@ -206,7 +161,7 @@ func newEntry(ptype uint8, level_tag, format string, a ...interface{}) {
 	level_tag = strings.ToUpper(level_tag)
 
 	level, ok := levelMap[level_tag]
-	if !ok || level < *minLogLevel {
+	if !ok || level < minLogLevel {
 		return
 	}
 
@@ -281,11 +236,11 @@ func outputAction() {
 
 			bs := []byte(logEntry.line())
 
-			if *logToStderr {
+			if logToStderr {
 				os.Stderr.Write(bs)
 			}
 
-			if len(*logDir) > 0 {
+			if len(logDir) > 0 {
 
 				for level_tag, level := range levelOut {
 

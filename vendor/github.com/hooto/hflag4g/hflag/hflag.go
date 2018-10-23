@@ -43,6 +43,15 @@ func init() {
 
 		k = strings.Trim(k, "-")
 
+		if n := strings.Index(k, "="); n > 0 {
+			if n+1 < len(k) {
+				args_kv[k[:n]] = types.Bytex(k[n+1:])
+			} else {
+				args_kv[k[:n]] = types.Bytex("")
+			}
+			continue
+		}
+
 		if len(os.Args) <= (i+1) || os.Args[i+1][0] == '-' {
 			args_kv[k] = types.Bytex([]byte(""))
 			continue

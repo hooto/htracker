@@ -106,22 +106,28 @@
 			"revisionTime": "2017-09-24T14:31:05Z"
 		},
 		{
-			"checksumSHA1": "Ex9SoKDMrv2k8m7PZUUwadyyRcs=",
+			"checksumSHA1": "PFAdA2+LXgrfopkKV2IiYibvHYU=",
 			"path": "github.com/hooto/hflag4g/hflag",
-			"revision": "69d74968e9f143a610c587569c006ed759e134af",
-			"revisionTime": "2018-10-12T15:09:11Z"
+			"revision": "1524604e73ef84cdc61cb12bf80453b253ae9e3f",
+			"revisionTime": "2018-10-23T13:30:20Z"
 		},
 		{
-			"checksumSHA1": "OnedWaQccLvpkif3G//Bdl80ogo=",
+			"checksumSHA1": "6BlfDslMGM/LjTVH4Sv8rxAJFpQ=",
+			"path": "github.com/hooto/hlang4g/hlang",
+			"revision": "ed10e23f3e14315cebeafdd5159fe04655d8c401",
+			"revisionTime": "2018-10-23T12:51:32Z"
+		},
+		{
+			"checksumSHA1": "Xiob5DORIBAOX33Uuqa9FM1C5VE=",
 			"path": "github.com/hooto/hlog4g/hlog",
-			"revision": "d0b4c98aab4bf0e686d77c578960c4127dd1643f",
-			"revisionTime": "2018-10-12T15:00:55Z"
+			"revision": "34ed9a7ca1c61118dcaa5704820ca8362aaf860f",
+			"revisionTime": "2018-10-23T13:31:55Z"
 		},
 		{
-			"checksumSHA1": "AwFX0aHZqVZFyp6c+ntttx8PjBo=",
+			"checksumSHA1": "XXS6/9KeAYAonM4EZ5tuBP9AtcE=",
 			"path": "github.com/hooto/httpsrv",
-			"revision": "bdf585e354d9b6a6324acc7df4d6103e3dc2281d",
-			"revisionTime": "2018-10-16T13:34:28Z"
+			"revision": "1df51d20bf27e5b1c08fe4ea10df425117f06748",
+			"revisionTime": "2018-10-23T13:48:36Z"
 		},
 		{
 			"checksumSHA1": "tuVhtLE0z+EyYnkiprljXc6+24M=",
