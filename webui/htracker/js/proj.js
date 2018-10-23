@@ -132,14 +132,23 @@ htrackerProj.ListRefresh = function(list_active, options) {
             htrackerProj.listOffset = null;
 
             if (err) {
+                if (options.offset) {
+                    return l4iAlert.Open("error", err);
+                }
                 $("#htracker-projlist").empty();
                 return l4i.InnerAlert(alert_id, "error", err);
             }
             if (data.error) {
+                if (options.offset) {
+                    return l4iAlert.Open("error", data.error.message);
+                }
                 $("#htracker-projlist").empty();
                 return l4i.InnerAlert(alert_id, "error", data.error.message);
             }
             if (!data.items || data.items.length < 1) {
+                if (options.offset) {
+                    return;
+                }
                 $("#htracker-projlist").empty();
                 return l4i.InnerAlert(alert_id, "warn",
                     l4i.T("No %s Found", l4i.T("Project")));
@@ -1102,7 +1111,7 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
                 htracker.OpToolsClean("#htracker-proj-proclist-optools");
             }
 
-            var box = document.getElementById("htracker-proc-list");
+            var box = document.getElementById("htracker-proj-ptrace-list");
             if (!box) {
                 l4iTemplate.Render({
                     dstid: "htracker-proj-ptrace-list-box",
@@ -1116,7 +1125,7 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
             }
             if (!data.items) {
                 if (!options.offset) {
-                    return l4i.InnerAlert(alert_id, 'warn',
+                    return l4i.InnerAlert(alert_id, 'info',
                         l4i.T("No %s Found", "Process/Trace"));
                 }
                 data.items = [];
@@ -1136,7 +1145,6 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
             if (options.offset) {
                 append = true;
             }
-
             l4iTemplate.Render({
                 dstid: "htracker-proj-ptrace-list",
                 tplid: "htracker-proj-ptrace-list-tpl",
@@ -1225,7 +1233,7 @@ htrackerProj.ProcDyTraceView = function(pid, pcreated, created) {
 
 
     l4iModal.Open({
-        title: "On-CPU Flame Graph",
+        title: l4i.T("Flame Graph") + " : On-CPU",
         tplsrc: "<div id='htracker-proj-flamegraph-body'></div>",
         width: "max",
         height: "max",

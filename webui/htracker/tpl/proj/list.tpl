@@ -5,7 +5,7 @@
     <div id="htracker-projlist-more" style="display: none; padding: 0 0 10px 10px">
       <button class="btn btn-primary btn-sm"
         onclick="htrackerProj.ListMore()">
-        {[=l4i.T("More items")]} ...
+        More ...
       </button>
     </div>
   </div>
