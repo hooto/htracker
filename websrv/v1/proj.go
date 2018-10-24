@@ -101,7 +101,7 @@ func (c Proj) ListAction() {
 			mkey := hapi.DataPathProjProcEntry(pptype, set.Id, 0, 0)
 			if rs2 := data.Data.KvProgGet(mkey); rs2.OK() {
 				if meta := rs2.Meta(); meta != nil {
-					set.ProcNum = int(meta.Num)
+					set.ExpProcNum = int(meta.Num)
 				}
 			}
 			sets.Items = append(sets.Items, &set)

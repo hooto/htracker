@@ -33,6 +33,7 @@ rm -rf %{buildroot}
 %pre
 
 %post
+systemctl daemon-reload
 
 %preun
 

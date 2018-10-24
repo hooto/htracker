@@ -150,17 +150,19 @@ func projAction(item hapi.ProjEntry) error {
 
 	rs := data.Data.KvProgRevScan(offset, cutset, 1000)
 	if rs.OK() {
-
-		rs.KvEach(func(entry *skv.ResultEntry) int {
+		rss := rs.KvList()
+		for _, v := range rss {
 			var set hapi.ProjProcEntry
-			if err := entry.Decode(&set); err == nil {
+			if err := v.Decode(&set); err == nil {
 				if !pids.Has(uint32(set.Pid)) {
 					set.Exited = tn
 					projProcEntrySync(item.Id, &set)
 				}
 			}
-			return 0
-		})
+		}
+		item.ProcNum = len(rss)
+		pkey := hapi.DataPathProjActiveEntry(item.Id)
+		data.Data.KvPut([]byte(pkey), item, nil)
 	}
 
 	hlog.Printf("debug", "proj/action hit %d", len(pids))
@@ -322,10 +324,10 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 				Actions: skv.KvProgOpFoldMeta,
 			},
 		)
+		hlog.Printf("debug", "Project/Process Exit %s, %d", entry.ProjId, entry.Pid)
 		if !rs.OK() {
 			return errors.New("database error")
 		}
-		hlog.Printf("debug", "Project/Process Exit %s, %d", entry.ProjId, entry.Pid)
 	}
 
 	pkey := hapi.DataPathProjProcHitEntry(
@@ -512,7 +514,7 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 
 		entry.Tracing = nil
 
-		projProcEntrySync(proj_id, entry)
+		// projProcEntrySync(proj_id, entry)
 
 		procTraceNum -= 1
 
@@ -566,7 +568,7 @@ func projRemove(item hapi.ProjEntry) error {
 
 		item.Closed = tn
 
-		rs := data.Data.KvPut([]byte(key_history), item, nil)
+		rs = data.Data.KvPut([]byte(key_history), item, nil)
 		if rs.OK() {
 			rs = data.Data.KvDel([]byte(key))
 		}

@@ -108,6 +108,7 @@ type ProjEntry struct {
 	Closed         uint32     `json:"closed"`
 	ProcNum        int        `json:"proc_num,omitempty"`
 	Comment        string     `json:"comment,omitempty"`
+	ExpProcNum     int        `json:"exp_proc_num,omitempty"`
 }
 
 func NewProjEntry() *ProjEntry {
