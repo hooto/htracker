@@ -56,14 +56,14 @@ body {
 
 #htracker-module-navbar {
   clear: both;
-  height: 30px;
+  height: 32px;
   margin: 10px 0;
   display: block;
 }
 
 #htracker-module-navbar li,
 #htracker-module-navbar button {
-  height: 30px;
+  height: 32px;
   vertical-align: baseline;
 }
 
@@ -97,7 +97,6 @@ body {
 }
 
 #htracker-module-layout button .icon16 {
-  zoom: 55%;
   margin: 0 4px 3px -5px;
 }
 
@@ -111,7 +110,7 @@ body {
   padding: 0;
   margin: 0 0 10px 10px;
   float: left;
-  min-height: 30px !important;
+  min-height: 32px !important;
   display: inline-block;
   vertical-align: middle;
 }
@@ -127,7 +126,7 @@ body {
   display: inline-block;
   zoom: 1;
   vertical-align: middle;
-  line-height: 30px;
+  line-height: 32px;
   float: left;
   border-radius: 2px;
 }
@@ -173,7 +172,7 @@ body {
   position: absolute;
   left: 50%;
   margin-left: -6px;
-  top: 30px;
+  top: 32px;
   width: 0;
   height: 0;
   border-color: #333 transparent transparent transparent;
@@ -204,14 +203,14 @@ body {
 }
 
 #htracker-module-navbar-optools button {
-  height: 30px;
+  height: 32px;
   line-height: 100%;
   padding: 5px 10px;
   font-size: 14px;
 }
 
 #htracker-module-navbar-optools input {
-  height: 30px;
+  height: 32px;
   line-height: 100%;
   padding: 5px 10px;
   margin: 0;
