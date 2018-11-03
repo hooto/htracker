@@ -36,10 +36,11 @@ var (
 )
 
 type ConfigCommon struct {
-	HttpPort uint16              `json:"http_port"`
-	RunMode  string              `json:"run_mode,omitempty"`
-	Auth     string              `json:"auth"`
-	Data     connect.ConnOptions `json:"data"`
+	HttpPort     uint16              `json:"http_port"`
+	HttpBasepath string              `json:"http_basepath,omitempty"`
+	RunMode      string              `json:"run_mode,omitempty"`
+	Auth         string              `json:"auth"`
+	Data         connect.ConnOptions `json:"data"`
 }
 
 func Setup(version, release string) error {
@@ -91,6 +92,7 @@ func Setup(version, release string) error {
 	}
 	data_dir := Prefix + "/var/" + string(Config.Data.Name)
 	Config.Data.SetValue("data_dir", data_dir)
+	hlog.Printf("info", "setup data dir %s", data_dir)
 
 	if err = os.MkdirAll(data_dir, 0755); err != nil {
 		return err
@@ -100,7 +102,15 @@ func Setup(version, release string) error {
 		Config.HttpPort = 9520
 	}
 
-	hlog.Printf("info", "setup data dir %s", data_dir)
+	if Config.HttpBasepath != "" {
+		Config.HttpBasepath = filepath.Clean(Config.HttpBasepath)
+		if Config.HttpBasepath == "." ||
+			Config.HttpBasepath == ".." ||
+			Config.HttpBasepath == "/" {
+			Config.HttpBasepath = ""
+		}
+		hlog.Printf("info", "setup http_prefix %s", Config.HttpBasepath)
+	}
 
 	return Sync()
 }

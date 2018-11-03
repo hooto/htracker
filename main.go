@@ -74,6 +74,10 @@ func main() {
 		v1m.ControllerRegister(new(hlang.Langsrv))
 	}
 
+	if config.Config.HttpBasepath != "" {
+		hs.Config.UrlBasePath = config.Config.HttpBasepath
+	}
+
 	// register module to httpsrv
 	hs.ModuleRegister("/htracker/v1", v1m)
 	hs.ModuleRegister("/htracker", frontend.NewModule())

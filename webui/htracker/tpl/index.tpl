@@ -1,8 +1,8 @@
 <nav class="navbar navbar-expand navbar-dark bg-dark">
-  <a class="navbar-brand" href="/htracker/">
-    <img src="/htracker/~/htracker/img/ht-topnav-light.png" width="30" height="30">
+  <a class="navbar-brand" href="{[=it.http_basepath]}/htracker/">
+    <img src="{[=it.http_basepath]}/htracker/~/htracker/img/ht-topnav-light.png" width="30" height="30">
   </a>
-  <a class="navbar-brand" href="/htracker/">Perf Tracker</a>
+  <a class="navbar-brand" href="{[=it.http_basepath]}/htracker/">Perf Tracker</a>
   <div id="htracker-nav" class="navbar-nav mr-auto" style="margin-left: 30px">
     <a class="nav-item nav-link l4i-nav-item" href="#proj/index">{[=l4i.T("Projects")]}</a>
     <a class="nav-item nav-link l4i-nav-item" href="#proc/index">{[=l4i.T("Processes")]}</a>

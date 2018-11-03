@@ -33,19 +33,19 @@ func (c Index) IndexAction() {
 <head>
 <meta charset="utf-8">
   <title>hooto Tracker | Open Source Application Performance Management</title>
-  <script src="/htracker/~/lessui/js/sea.js?v=` + config.VersionHash + `"></script>
-  <script src="/htracker/~/htracker/js/main.js?v=` + config.VersionHash + `"></script>
-  <link rel="stylesheet" href="/htracker/~/htracker/css/main.css?v=` + config.VersionHash + `" type="text/css">
-  <link rel="shortcut icon" type="image/x-icon" href="/htracker/~/htracker/img/ht-tab-dark.png">
+  <script src="` + config.Config.HttpBasepath + `/htracker/~/lessui/js/sea.js?v=` + config.VersionHash + `"></script>
+  <script src="` + config.Config.HttpBasepath + `/htracker/~/htracker/js/main.js?v=` + config.VersionHash + `"></script>
+  <link rel="stylesheet" href="` + config.Config.HttpBasepath + `/htracker/~/htracker/css/main.css?v=` + config.VersionHash + `" type="text/css">
+  <link rel="shortcut icon" type="image/x-icon" href="` + config.Config.HttpBasepath + `/htracker/~/htracker/img/ht-tab-dark.png">
   <script type="text/javascript">
     htracker.version = "` + config.VersionHash + `";
     htracker.lang = "` + c.Request.Locale + `";
+    htracker.http_basepath = "` + config.Config.HttpBasepath + `";
 	window.onload_hooks = [];
     window.onload = htracker.Boot();
   </script>
 </head>
-<body id="body-content">
-</body>
+<body id="body-content"></body>
 </html>
 `)
 

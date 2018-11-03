@@ -26,7 +26,7 @@
   <th>{[=l4i.T("User")]}</th>
   <th>CPU %</th>
   <th>{[=l4i.T("Memory")]}</th>
-  <th>{[=l4i.T("Command")]}</th>
+  <th width="50%">{[=l4i.T("Command")]}</th>
   <th width="30"></th>
 </tr>
 </thead>
@@ -38,8 +38,8 @@
   <td>{[=v.cpu_p.toFixed(2)]}</td>
   <td>{[=htracker.UtilResSizeFormat(v.mem_rss)]}</td>
   <td>
-    {[if (v.cmd.length > 60) {]}
-      {[=v.cmd.substr(0, 50)]}...
+    {[if (v.cmd.length > 160) {]}
+      {[=v.cmd.substr(0, 150)]}...
     {[} else {]}
       {[=v.cmd]}
     {[}]}

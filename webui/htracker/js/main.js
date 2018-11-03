@@ -14,6 +14,7 @@
 
 
 var h3tracker = {
+    http_basepath: "",
     frtbase: "/htracker/",
     base: "/htracker/",
     api: "/htracker/v1/",
@@ -34,6 +35,13 @@ h3tracker.urlver = function(debug_off) {
 }
 
 h3tracker.Boot = function() {
+
+    if (h3tracker.http_basepath.length > 0) {
+        h3tracker.frtbase = h3tracker.http_basepath + h3tracker.frtbase;
+        h3tracker.base = h3tracker.http_basepath + h3tracker.base;
+        h3tracker.api = h3tracker.http_basepath + h3tracker.api;
+        h3tracker.basetpl = h3tracker.http_basepath + h3tracker.basetpl;
+    }
 
     seajs.config({
         base: h3tracker.frtbase,
@@ -63,7 +71,7 @@ h3tracker.Boot = function() {
             "~/icono/icono.css",
         ], function() {
 
-            hooto_chart.basepath = "/htracker/~/hchart";
+            hooto_chart.basepath = h3tracker.http_basepath + "/htracker/~/hchart";
 
             if (window.onload_hooks) {
                 window.setTimeout(function() {
@@ -108,6 +116,7 @@ h3tracker.load = function() {
                 tplsrc: tpl,
                 data: {
                     version: h3tracker.version,
+                    http_basepath: h3tracker.http_basepath,
                 },
                 callback: function() {
                     l4i.UrlEventHandler("proj/index", true);

@@ -40,8 +40,8 @@
 <tr id="proj-{[=v.pid]}-{[=v.created]}">
   <td>{[=v.pid]}</td>
   <td>
-    {[if (v.cmd.length > 80) {]}
-      {[=v.cmd.substr(0, 70)]}...
+    {[if (v.cmd.length > 160) {]}
+      {[=v.cmd.substr(0, 150)]}...
     {[} else {]}
       {[=v.cmd]}
     {[}]}
