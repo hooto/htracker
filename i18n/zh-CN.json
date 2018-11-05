@@ -58,6 +58,14 @@
       "val": "当前运行中的进程"
     },
     {
+      "key": "day",
+      "val": "天"
+    },
+    {
+      "key": "days",
+      "val": "天"
+    },
+    {
       "key": "dynamic trace",
       "val": "动态追踪"
     },
@@ -94,12 +102,24 @@
       "val": "火焰图"
     },
     {
+      "key": "hint",
+      "val": "提示"
+    },
+    {
       "key": "history projects",
       "val": "历史项目"
     },
     {
       "key": "hit processes",
       "val": "匹配进程"
+    },
+    {
+      "key": "hour",
+      "val": "小时"
+    },
+    {
+      "key": "hours",
+      "val": "小时"
     },
     {
       "key": "log size",
@@ -135,7 +155,7 @@
     },
     {
       "key": "no %s found",
-      "val": "没有找到 %s"
+      "val": "没有找到%s"
     },
     {
       "key": "open in new tab",
@@ -152,6 +172,10 @@
     {
       "key": "proc-filter-by-cmd-msg",
       "val": "通过进程的命令行内容过滤"
+    },
+    {
+      "key": "proc-trace-not-found-help-msg",
+      "val": "\u003cul\u003e\u003cli\u003e后台任务每间隔20分钟采样一次，每次采样持续2分钟，所以请耐心等待\u003c/li\u003e\u003cli\u003e如果被采样的应用进程负载较低,则可能采样失败,系统自动在下一个间隔周期持续跟踪\u003c/li\u003e\u003c/ul\u003e"
     },
     {
       "key": "process",
@@ -256,6 +280,10 @@
     {
       "key": "successfully sign-out. page redirecting ...",
       "val": "成功登出, 页面跳转中 ..."
+    },
+    {
+      "key": "the last",
+      "val": "最近"
     },
     {
       "key": "trace by %s",

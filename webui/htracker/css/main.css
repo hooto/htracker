@@ -44,9 +44,11 @@ body {
   padding-right: 15px;
 }
 
+
 #htracker-nav>a.nav-item {
-  font-size: 1.2em;
+  font-size: 0.875rem;
 }
+
 
 
 .htracker-nav-right {
@@ -54,18 +56,20 @@ body {
   margin-right: 2px;
 }
 
+
 #htracker-module-navbar {
   clear: both;
-  height: 32px;
+  height: 2.0rem;
   margin: 10px 0;
   display: block;
 }
 
 #htracker-module-navbar li,
 #htracker-module-navbar button {
-  height: 32px;
-  vertical-align: baseline;
+  height: 2.0rem;
+  vertical-align: middle;
 }
+
 
 #htracker-module-navbar li:last-child {
   margin-right: 0;
@@ -73,6 +77,20 @@ body {
 
 #htracker-module-navbar form {
   margin-bottom: 0 !important;
+}
+
+#htracker-module-navbar form input,
+#htracker-module-navbar form button {
+  height: 2.0rem !important;
+  vertical-align: middle;
+}
+
+#htracker-module-navbar #htracker-proc-list-status-msg {
+  height: 2.0rem;
+  line-height: 1.5rem;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.875rem;
+  border-radius: 0.2rem;
 }
 
 .hide {
@@ -96,8 +114,9 @@ body {
   padding-right: 10px;
 }
 
+
 #htracker-module-layout button .icon16 {
-  margin: 0 4px 3px -5px;
+  margin: 0 5px 2px 0;
 }
 
 #htracker-module-layout .alert {
@@ -110,10 +129,10 @@ body {
   padding: 0;
   margin: 0 0 10px 10px;
   float: left;
-  min-height: 32px !important;
   display: inline-block;
   vertical-align: middle;
 }
+
 
 .htracker-module-nav:first-child {
   margin-left: 0 !important;
@@ -126,32 +145,33 @@ body {
   display: inline-block;
   zoom: 1;
   vertical-align: middle;
-  line-height: 32px;
+  line-height: 1.5rem;
   float: left;
-  border-radius: 2px;
+  border-radius: 0.2rem;
 }
+
 
 .htracker-module-nav>li:first-child {
   /* margin-left: 0; */
 }
 
-.htracker-module-nav>li>a {
-  padding: 0 10px;
+.htracker-module-nav>li>a,
+.htracker-module-nav>li.item {
+  padding: 0.25rem 0.5rem;
   display: block;
   text-decoration: none;
   white-space: nowrap;
   color: #777;
-  font-size: 12px;
-  border-radius: 2px;
+  line-height: 1.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.2rem;
 }
 
 .htracker-module-nav>li>a:hover {
-  padding: 0 10px;
   display: block;
   text-decoration: none;
   white-space: nowrap;
   color: #777;
-  font-size: 12px;
   background-color: rgba(0, 0, 0, 0.1);
 }
 
@@ -171,13 +191,12 @@ body {
   display: block;
   position: absolute;
   left: 50%;
-  margin-left: -6px;
-  top: 32px;
+  margin-left: -0.6rem;
   width: 0;
   height: 0;
   border-color: #333 transparent transparent transparent;
   border-style: solid;
-  border-width: 6px;
+  border-width: 0.6rem;
 }
 
 .htracker-module-nav>li.hover,
@@ -198,24 +217,21 @@ body {
 }
 
 #htracker-module-navbar-optools {
-  line-height: 100%;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 #htracker-module-navbar-optools button {
-  height: 32px;
-  line-height: 100%;
-  padding: 5px 10px;
-  font-size: 14px;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
 }
 
 #htracker-module-navbar-optools input {
-  height: 32px;
-  line-height: 100%;
-  padding: 5px 10px;
   margin: 0;
-  font-size: 14px;
-  border-radius: 2px;
+  padding: 0.25rem 0.5rem;
+  line-height: 1.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.2rem;
   background-color: #fff;
   color: #000;
 }
@@ -277,4 +293,14 @@ body {
   color: #6c757d;
   font-size: 1.1em;
   text-decoration: underline;
+}
+
+.alert ul {
+  margin: 5px 0 5px 0;
+  padding: 0 0 0 1em;
+  line-height: 150%;
+}
+
+.alert ul li {
+  margin-left: 0;
 }

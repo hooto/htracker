@@ -178,6 +178,7 @@ htrackerProj.ListRefresh = function(list_active, options) {
                 data._history = true;
             }
 
+
             var append = false;
             if (options.offset) {
                 append = true;
@@ -1126,7 +1127,9 @@ htrackerProj.ProcDyTraceList = function(proj_id, pid, pcreated, options) {
             if (!data.items) {
                 if (!options.offset) {
                     return l4i.InnerAlert(alert_id, 'info',
-                        l4i.T("No %s Found", "Process/Trace"));
+                        l4i.T("No %s Found", "Process/Trace") +
+                        ". " + l4i.T("Hint") + ":" +
+                        l4i.T("proc-trace-not-found-help-msg"));
                 }
                 data.items = [];
             }

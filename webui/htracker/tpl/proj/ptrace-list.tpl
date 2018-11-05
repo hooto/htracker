@@ -26,7 +26,7 @@
 
 <script type="text/html" id="htracker-proj-ptrace-list-menus">
 <li>
-  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerProj.ProcIndex()">
+  <button type="button" class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcIndex()">
     <span class="icon16 icono-caretLeftCircle"></span>
     {[=l4i.T("Back to Process List")]}</button>
 </li>

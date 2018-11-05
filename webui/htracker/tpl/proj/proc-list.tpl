@@ -5,7 +5,7 @@
 
 <script type="text/html" id="htracker-proj-proclist-menus">
 <li>
-  <button type="button" class="btn btn-primary btn-sm" onclick="htrackerProj.Index()">
+  <button type="button" class="btn btn-outline-primary btn-sm" onclick="htrackerProj.Index()">
     <span class="icon16 icono-caretLeftCircle"></span>
     <span>{[=l4i.T("Back to Project List")]}</span>
   </button>
@@ -26,7 +26,7 @@
 <table class="table table-hover valign-middle">
 <thead>
   <tr>
-    <th>ID</th>
+    <th>PID</th>
     <th width="30%">{[=l4i.T("Command")]}</th>
     <th>{[=l4i.T("Created")]}</th>
     {[? it._hit]}<th>{[=l4i.T("Updated")]}</th>{[?]}
@@ -50,7 +50,7 @@
   {[? it._hit]}<td>{[=l4i.UnixTimeFormat(v.updated, "Y-m-d H:i")]}</td>{[?]}
   {[? it._exit]}<td>{[=l4i.UnixTimeFormat(v.exited, "Y-m-d H:i")]}</td>{[?]}
   <td align="right">
-    <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcDyTraceList('{[=v.proj_id]}', {[=v.pid]}, {[=v.created]})">
+    <button class="btn {[if (v.traced > 100000000) {]}btn-outline-primary{[} else {]}btn-outline-secondary{[}]} btn-sm" onclick="htrackerProj.ProcDyTraceList('{[=v.proj_id]}', {[=v.pid]}, {[=v.created]})">
       <i class="icon16 icono-barChart"></i>
       {[=l4i.T("Dynamic Trace")]}
     </button>

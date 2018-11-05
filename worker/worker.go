@@ -311,13 +311,27 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 
 	var rs skv.Result
 
+	pkey := hapi.DataPathProjProcHitEntry(
+		proj_id, entry.Created, uint32(entry.Pid))
+
+	if entry.Traced < 1 && entry.Exited < 1 {
+
+		rs = data.Data.KvProgGet(pkey)
+		if rs.OK() {
+			var prev hapi.ProjProcEntry
+			if err := rs.Decode(&prev); err == nil && prev.Traced > 0 {
+				entry.Traced = prev.Traced
+			}
+		}
+	}
+
 	if entry.Exited > 0 {
-		pkey := hapi.DataPathProjProcExitEntry(
+		pkeyt := hapi.DataPathProjProcExitEntry(
 			proj_id, entry.Created, uint32(entry.Pid))
 		entry.ProjId = proj_id
 
 		rs = data.Data.KvProgPut(
-			pkey,
+			pkeyt,
 			skv.NewKvEntry(entry),
 			&skv.KvProgWriteOptions{
 				Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
@@ -329,9 +343,6 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 			return errors.New("database error")
 		}
 	}
-
-	pkey := hapi.DataPathProjProcHitEntry(
-		proj_id, entry.Created, uint32(entry.Pid))
 
 	if entry.Exited > 0 {
 		rs = data.Data.KvProgDel(pkey, nil)

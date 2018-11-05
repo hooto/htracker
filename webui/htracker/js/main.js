@@ -282,6 +282,8 @@ h3tracker.Ajax = function(url, options) {
         url = h3tracker.HttpSrvBasePath(url);
     }
 
+    options.timeout = 60000;
+
     l4i.Ajax(url, options)
 }
 

@@ -4,7 +4,7 @@
 
 <script type="text/html" id="htracker-proc-list-menus">
 <li>
-  <div id="htracker-proc-list-status-msg" class="badge badge-success" style="padding: 5px 10px;font-size:14px">loading</div>
+  <div id="htracker-proc-list-status-msg" class="badge badge-success">loading</div>
 </li>
 </script>
 
