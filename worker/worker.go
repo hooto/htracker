@@ -151,16 +151,27 @@ func projAction(item hapi.ProjEntry) error {
 	rs := data.Data.KvProgRevScan(offset, cutset, 1000)
 	if rs.OK() {
 		rss := rs.KvList()
+		item.ProcNum = 0
 		for _, v := range rss {
 			var set hapi.ProjProcEntry
-			if err := v.Decode(&set); err == nil {
-				if !pids.Has(uint32(set.Pid)) {
+			if err := v.Decode(&set); err != nil {
+				continue
+			}
+			if !pids.Has(uint32(set.Pid)) {
+				set.Exited = tn
+			} else {
+				entry := status.ProcList.Entry(int32(set.Pid), 0)
+				if entry != nil && entry.Created != set.Created {
 					set.Exited = tn
-					projProcEntrySync(item.Id, &set)
 				}
 			}
+			if set.Exited > 0 {
+				projProcEntrySync(item.Id, &set)
+				continue
+			}
+
+			item.ProcNum += 1
 		}
-		item.ProcNum = len(rss)
 		pkey := hapi.DataPathProjActiveEntry(item.Id)
 		data.Data.KvPut([]byte(pkey), item, nil)
 	}
@@ -417,18 +428,40 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 
 	tn := uint32(time.Now().Unix())
 
-	if entry.Tracing != nil ||
+	if entry.Tracing != nil {
+		return nil
+	}
+
+	if entry.OpAction != hapi.ProjProcEntryOpTraceForce &&
 		(tn-entry.Traced) < perfRecordRangeSec {
 		return nil
 	}
 
+	entry.OpAction = 0
 	entry.Tracing = &hapi.ProjProcTraceEntry{
-		Created: tn,
+		ProjId:   entry.ProjId,
+		Pid:      entry.Pid,
+		Pcreated: entry.Created,
+		Created:  tn,
 	}
 
 	procTraceNum += 1
 
-	go func(proj_id string, entry *hapi.ProjProcEntry) {
+	tkey := hapi.DataPathProjProcTraceEntry(
+		entry.ProjId, entry.Created, uint32(entry.Pid),
+		entry.Tracing.Created,
+	)
+
+	data.Data.KvProgPut(
+		tkey,
+		skv.NewKvEntry(entry.Tracing),
+		&skv.KvProgWriteOptions{
+			Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
+			Actions: skv.KvProgOpFoldMeta,
+		},
+	)
+
+	go func(proj_id string, entry *hapi.ProjProcEntry, tkey skv.KvProgKey) {
 
 		var (
 			perfId = fmt.Sprintf("perf.%d.%d.%d",
@@ -473,55 +506,41 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 				}
 			}
 
-			if err == nil {
+			if gfp, err := os.Open(perfPrefix + ".svg"); err == nil {
 
-				if gfp, err := os.Open(perfPrefix + ".svg"); err == nil {
-
-					fsts, _ := gfp.Stat()
-					if fsts.Size() > 100 && fsts.Size() < 8*hapi.MB {
-						if bs, err := ioutil.ReadAll(gfp); err == nil {
-							entry.Tracing.GraphOnCPU = string(bs)
-						}
-					} else {
-						hlog.Printf("error", "svg size %d, %s", fsts.Size(), perfPrefix+".svg")
+				fsts, _ := gfp.Stat()
+				if fsts.Size() > 100 && fsts.Size() < 8*hapi.MB {
+					if bs, err := ioutil.ReadAll(gfp); err == nil {
+						entry.Tracing.GraphOnCPU = string(bs)
 					}
-
-					gfp.Close()
+				} else {
+					hlog.Printf("error", "svg size %d, %s", fsts.Size(), perfPrefix+".svg")
 				}
-			}
 
-			if entry.Tracing.GraphOnCPU != "" {
-
-				entry.Tracing.ProjId = entry.ProjId
-				entry.Tracing.Pid = entry.Pid
-				entry.Tracing.Pcreated = entry.Created
-
-				entry.Tracing.Updated = uint32(time.Now().Unix())
-
-				pkey := hapi.DataPathProjProcTraceEntry(
-					entry.ProjId, entry.Created, uint32(entry.Pid),
-					entry.Tracing.Created,
-				)
-
-				data.Data.KvProgPut(
-					pkey,
-					skv.NewKvEntry(entry.Tracing),
-					&skv.KvProgWriteOptions{
-						Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
-						Actions: skv.KvProgOpFoldMeta,
-					},
-				)
-
-				entry.Traced = uint32(time.Now().Unix())
-
-				hlog.Printf("debug", "trace %s in %d s", perfId,
-					entry.Tracing.Updated-entry.Tracing.Created,
-				)
-
-			} else {
-				hlog.Printf("error", "ERR trace %s", perfId)
+				gfp.Close()
 			}
 		}
+
+		entry.Tracing.Updated = uint32(time.Now().Unix())
+		entry.Traced = entry.Tracing.Updated
+
+		if entry.Tracing.GraphOnCPU != "" {
+			hlog.Printf("debug", "trace %s in %d s", perfId,
+				(entry.Tracing.Updated - entry.Tracing.Created),
+			)
+		} else {
+			hlog.Printf("error", "ERR trace %s", perfId)
+			entry.Tracing.PerfSize = 0
+		}
+
+		data.Data.KvProgPut(
+			tkey,
+			skv.NewKvEntry(entry.Tracing),
+			&skv.KvProgWriteOptions{
+				Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
+				Actions: skv.KvProgOpFoldMeta,
+			},
+		)
 
 		entry.Tracing = nil
 
@@ -535,7 +554,7 @@ func projActionDyTrace(proj_id string, entry *hapi.ProjProcEntry) error {
 			}
 		}
 
-	}(proj_id, entry)
+	}(proj_id, entry, tkey)
 
 	return nil
 }

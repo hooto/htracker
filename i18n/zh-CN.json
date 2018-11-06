@@ -6,6 +6,10 @@
       "val": "你确定移除这个项目"
     },
     {
+      "key": "auto refresh in %s seconds",
+      "val": "%d 秒后自动更新"
+    },
+    {
       "key": "back",
       "val": "返回"
     },
@@ -174,8 +178,16 @@
       "val": "通过进程的命令行内容过滤"
     },
     {
+      "key": "proc-trace-none-msg",
+      "val": "没有追踪数据"
+    },
+    {
       "key": "proc-trace-not-found-help-msg",
       "val": "\u003cul\u003e\u003cli\u003e后台任务每间隔20分钟采样一次，每次采样持续2分钟，所以请耐心等待\u003c/li\u003e\u003cli\u003e如果被采样的应用进程负载较低,则可能采样失败,系统自动在下一个间隔周期持续跟踪\u003c/li\u003e\u003c/ul\u003e"
+    },
+    {
+      "key": "proc-trace-pending-hint-msg",
+      "val": "每次采样持续2分钟，请耐心等待"
     },
     {
       "key": "process",
@@ -288,6 +300,10 @@
     {
       "key": "trace by %s",
       "val": "通过 %s 追踪"
+    },
+    {
+      "key": "tracing",
+      "val": "正在追踪"
     },
     {
       "key": "updated",

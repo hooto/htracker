@@ -574,4 +574,70 @@ h3tracker.OpToolsClean = function() {
     h3tracker.OpToolActive = null;
 }
 
+
+h3tracker.timeTicker = null;
+h3tracker.timeTickLoopLen = 3000;
+h3tracker.timeTickOpt = null;
+
+h3tracker.TimeTick = function(fn, timems, div_target) {
+    if (timems < 1000) {
+        return;
+    }
+
+    if (h3tracker.timeTicker) {
+        clearInterval(h3tracker.timeTicker);
+        console.log("clean prev ticker " + div_target);
+    }
+
+    var elem = $("#" + div_target);
+    if (!elem) {
+        return;
+    }
+    elem.css({
+        "display": "block"
+    });
+    elem.text(l4i.T("auto refresh in %s seconds", timems / 1000));
+
+
+    h3tracker.timeTickOpt = {
+        fn: fn,
+        time: timems,
+        div_target: div_target,
+    };
+    h3tracker.timeTicker = setInterval(h3tracker.timeTickTik, h3tracker.timeTickLoopLen);
+}
+
+h3tracker.TimeTickClean = function() {
+    if (h3tracker.timeTicker) {
+        clearInterval(h3tracker.timeTicker);
+    }
+    h3tracker.timeTicker = null;
+    h3tracker.timeTickOpt = null;
+}
+
+h3tracker.timeTickTik = function() {
+    if (h3tracker.timeTickOpt) {
+        h3tracker.timeTickOpt.time -= h3tracker.timeTickLoopLen;
+        var elem = $("#" + h3tracker.timeTickOpt.div_target);
+        if (elem) {
+            if (h3tracker.timeTickOpt.time < 1000) {
+                h3tracker.timeTickOpt.fn();
+                h3tracker.timeTickOpt = null;
+                elem.css({
+                    "display": "none"
+                });
+            } else {
+                elem.text(l4i.T("auto refresh in %s seconds", h3tracker.timeTickOpt.time / 1000));
+            }
+        } else {
+            h3tracker.timeTickOpt = null;
+        }
+    }
+
+    if (!h3tracker.timeTickOpt) {
+        clearInterval(h3tracker.timeTicker);
+        h3tracker.timeTicker = null;
+    }
+}
+
 var htracker = h3tracker;

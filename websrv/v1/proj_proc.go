@@ -25,6 +25,11 @@ import (
 
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
+	"github.com/hooto/htracker/status"
+)
+
+var (
+	ttlLimit int = 30 // days
 )
 
 func (c Proj) ProcListAction() {
@@ -227,8 +232,8 @@ func (c Proj) ProcTraceListAction() {
 		return
 	}
 
-	if limit < 10 {
-		limit = 10
+	if limit < 1 {
+		limit = 1
 	} else if limit > 100 {
 		limit = 100
 	}
@@ -246,6 +251,8 @@ func (c Proj) ProcTraceListAction() {
 	if offset == 0 {
 		offset = uint32(time.Now().Unix())
 	}
+
+	proc := status.ProcList.Entry(int32(proc_id), 0)
 
 	if rs := data.Data.KvProgRevScan(
 		hapi.DataPathProjProcTraceEntry(
@@ -267,8 +274,29 @@ func (c Proj) ProcTraceListAction() {
 		for _, v := range ls {
 			var item hapi.ProjProcTraceEntry
 			if err := v.Decode(&item); err == nil {
+
 				item.GraphOnCPU = ""
 				item.GraphBurn = nil
+
+				if item.Updated < 100000000 {
+
+					if proc == nil || proc.Tracing == nil || proc.Tracing.Created != item.Created {
+						item.Updated = uint32(time.Now().Unix())
+						item.PerfSize = 0
+						data.Data.KvProgPut(
+							hapi.DataPathProjProcTraceEntry(
+								item.ProjId, item.Pcreated, uint32(item.Pid),
+								item.Created,
+							),
+							skv.NewKvEntry(item),
+							&skv.KvProgWriteOptions{
+								Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
+								Actions: skv.KvProgOpFoldMeta,
+							},
+						)
+					}
+				}
+
 				sets.Items = append(sets.Items, &item)
 			}
 		}
@@ -359,3 +387,22 @@ func (c Proj) ProcTraceGraphBurnAction() {
 	c.RenderError(404, "Object Not Found")
 }
 */
+
+func (c Proj) ProcTraceNewAction() {
+
+	var (
+		proj_id = c.Params.Get("proj_id")
+		proc_id = int32(c.Params.Int64("proc_id"))
+		set     types.TypeMeta
+	)
+	defer c.RenderJson(&set)
+
+	proc := status.ProcList.Entry(proc_id, 0)
+	if proc == nil || proc.ProjId != proj_id {
+		set.Error = types.NewErrorMeta("400", "Process Not Found")
+		return
+	}
+
+	proc.OpAction = hapi.ProjProcEntryOpTraceForce
+	set.Kind = "ProcTraceEntry"
+}

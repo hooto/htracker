@@ -15,6 +15,9 @@
 
 <script type="text/html" id="htracker-proj-proclist-optools">
 <li>
+  <div id="htracker-proj-proclist-status-msg" class="item-status-msg badge badge-light" style="display:none"></div>
+</li>
+<li>
   <button class="btn btn-outline-danger btn-sm" onclick="htrackerProj.EntryDel()">
     <span class="icon16 icono-cross"></span>
     {[=l4i.T("Remove this Project")]}

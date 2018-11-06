@@ -85,12 +85,17 @@ body {
   vertical-align: middle;
 }
 
-#htracker-module-navbar #htracker-proc-list-status-msg {
+#htracker-module-navbar .item-status-msg {
   height: 2.0rem;
   line-height: 1.5rem;
   padding: 0.25rem 0.5rem !important;
   font-size: 0.875rem;
   border-radius: 0.2rem;
+}
+
+#htracker-module-navbar .item-status-msg.badge-light {
+  color: #adb5bd;
+  border: 1px solid #adb5bd;
 }
 
 .hide {

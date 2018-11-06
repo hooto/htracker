@@ -10,8 +10,16 @@
       "val": "Filter by Command line content of the Process"
     },
     {
+      "key": "proc-trace-none-msg",
+      "val": "No data traced"
+    },
+    {
       "key": "proc-trace-not-found-help-msg",
       "val": "\u003cul\u003e\u003cli\u003ethe backend tasks are sampled every 20 minutes, each sample lasts for 2 minutes, so please be patient in waiting\u003c/li\u003e\u003cli\u003eif the sampled application process running in low load, the sampling may fail and the system will automatically keeps track of the next interval\u003c/li\u003e\u003c/ul\u003e"
+    },
+    {
+      "key": "proc-trace-pending-hint-msg",
+      "val": "the sampling will take 2 minutes, please be patient in waiting"
     },
     {
       "key": "project-created-msg",

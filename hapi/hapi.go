@@ -94,16 +94,12 @@ type ProjFilter struct {
 	ProcCreated uint32 `json:"proc_created,omitempty"`
 }
 
-const (
-	OpActionDelete uint64 = 1 << 3
-)
-
 type ProjEntry struct {
 	types.TypeMeta `json:",inline"`
 	Id             string     `json:"id"`
 	Name           string     `json:"name"`
 	Filter         ProjFilter `json:"filter"`
-	Action         uint64     `json:"action"`
+	Action         uint32     `json:"action"`
 	Created        uint32     `json:"created"`
 	Closed         uint32     `json:"closed"`
 	ProcNum        int        `json:"proc_num,omitempty"`
@@ -125,6 +121,10 @@ type ProjList struct {
 	Items          []*ProjEntry `json:"items,omitempty"`
 }
 
+const (
+	ProjProcEntryOpTraceForce uint32 = 1 << 17
+)
+
 type ProjProcEntry struct {
 	ProjId          string              `json:"proj_id,omitempty"`
 	Pid             int32               `json:"pid"`
@@ -134,6 +134,7 @@ type ProjProcEntry struct {
 	Cmd             string              `json:"cmd,omitempty"`
 	Traced          uint32              `json:"traced"`
 	Exited          uint32              `json:"exited,omitempty"`
+	OpAction        uint32              `json:"-"`
 	Process         *process.Process    `json:"-"`
 	StatsSampleFeed *PbStatsSampleFeed  `json:"-"`
 	Tracing         *ProjProcTraceEntry `json:"-"`
@@ -240,4 +241,20 @@ type ProjProcTraceList struct {
 	types.TypeMeta `json:",inline"`
 	Total          int64                 `json:"total"`
 	Items          []*ProjProcTraceEntry `json:"items,omitempty"`
+}
+
+const (
+	OpActionDelete uint32 = 1 << 3
+)
+
+func OpActionAllow(opbase, op uint32) bool {
+	return (op & opbase) == op
+}
+
+func OpActionRemove(opbase, op uint32) uint32 {
+	return (opbase | op) - (op)
+}
+
+func OpActionAppend(opbase, op uint32) uint32 {
+	return (opbase | op)
 }

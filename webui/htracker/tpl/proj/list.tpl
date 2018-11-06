@@ -22,6 +22,9 @@
 
 <script type="text/html" id="htracker-projlist-optools">
 <li>
+  <div id="htracker-proj-list-status-msg" class="item-status-msg badge badge-light" style="display:none"></div>
+</li>
+<li>
   <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.NewEntry()">
     <span class="icon16 icono-plus"></span>
     {[=l4i.T("New Project")]}

@@ -70,17 +70,18 @@ htrackerProc.ListRefresh = function() {
                 });
                 htrackerProc.listLastUpdated = data.updated;
 
-                var msg = l4i.T("Top %d/%d processes at %s",
-                    data.num, data.total, l4i.UnixTimeFormat(data.updated, "Y-m-d H:i:s"));
+                var msg = l4i.T("Top %d/%d Processes",
+                    data.num, data.total); //, l4i.UnixTimeFormat(data.updated, "Y-m-d H:i:s"));
                 $("#htracker-proc-list-status-msg").text(msg);
             }
 
-            if (!htrackerProc.listAutoRefreshTimer) {
-                htrackerProc.listAutoRefreshTimer = window.setTimeout(function() {
-                    htrackerProc.listAutoRefreshTimer = null;
-                    htrackerProc.ListRefresh();
-                }, htrackerProc.listAutoRefreshTimeRange);
-            }
+            htracker.TimeTick(htrackerProc.ListRefresh, 10000, "htracker-proc-list-status2-msg");
+        // if (!htrackerProc.listAutoRefreshTimer) {
+        //     htrackerProc.listAutoRefreshTimer = window.setTimeout(function() {
+        //         htrackerProc.listAutoRefreshTimer = null;
+        //         htrackerProc.ListRefresh();
+        //     }, htrackerProc.listAutoRefreshTimeRange);
+        // }
         },
     });
 }
