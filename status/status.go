@@ -29,7 +29,11 @@ import (
 )
 
 var (
-	ProcList      hapi.ProjProcList
+	ProcList hapi.ProjProcList
+	Host     = hapi.ResHostItem{
+		Spec:   &hapi.ResHostSpec{},
+		Status: &hapi.ResHostStatus{},
+	}
 	mu            sync.Mutex
 	procUpdated   uint32 = 0
 	procPending          = false

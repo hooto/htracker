@@ -22,6 +22,7 @@ var htrackerProc = {
 }
 
 htrackerProc.Index = function() {
+    htracker.ModuleNavbarOn();
     h3tracker.KeyUpEscHook = null;
     h3tracker.ModuleNavbarLeftClean();
     htracker.Loader("#htracker-module-content", "proc/list", {

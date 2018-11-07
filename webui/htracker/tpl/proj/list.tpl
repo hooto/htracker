@@ -38,6 +38,7 @@
   <tr>
     <th>{[=l4i.T("Project Name")]}</th>
     <th>{[=l4i.T("Filter")]}</th>
+    <th>{[=l4i.T("Trace Plan")]}</th>
     <th>{[=l4i.T("Created")]}</th>
     {[? it._history]}<th>{[=l4i.T("Closed")]}</th>{[?]}
     <th>{[=l4i.T("Hit Processes")]}</th>
@@ -55,6 +56,7 @@
   onclick="htrackerProj.ProcIndex('{[=v.id]}')">
   <td>{[=v.name]}</td>
   <td>{[=v._filter_title]}</td>
+  <td>{[=v._plan_title]}</td>
   <td>{[=l4i.UnixTimeFormat(v.created, "Y-m-d H:i")]}</td>
   {[? it._history]}<td>{[=l4i.UnixTimeFormat(v.closed, "Y-m-d H:i")]}</td>{[?]}
   <td>

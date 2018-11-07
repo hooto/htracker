@@ -15,19 +15,39 @@
     },
     {
       "key": "proc-trace-not-found-help-msg",
-      "val": "\u003cul\u003e\u003cli\u003ethe backend tasks are sampled every 20 minutes, each sample lasts for 2 minutes, so please be patient in waiting\u003c/li\u003e\u003cli\u003eif the sampled application process running in low load, the sampling may fail and the system will automatically keeps track of the next interval\u003c/li\u003e\u003c/ul\u003e"
+      "val": "\u003cul\u003e\u003cli\u003ethe backend tasks will automatically collect data according to the set plan, it will take some time, so please be patient in waiting\u003c/li\u003e\u003cli\u003eif the sampled application process running in low load, the sampling may fail and the system will automatically keeps track of the next interval\u003c/li\u003e\u003c/ul\u003e"
     },
     {
       "key": "proc-trace-pending-hint-msg",
-      "val": "the sampling will take 2 minutes, please be patient in waiting"
+      "val": "Each sampling period will take some time, please wait patiently"
     },
     {
       "key": "project-created-msg",
       "val": "Successful operation (the system will take 2 minutes to collect data)"
     },
     {
+      "key": "project-new-plan-fixtimer-hint-msg",
+      "val": "Automatically trace the process based on fixed time"
+    },
+    {
+      "key": "project-new-plan-overload-hint-msg",
+      "val": "Automatically trace the process when CPU load is higher than the specified value"
+    },
+    {
+      "key": "project-new-plan-select-hint-msg",
+      "val": "\u003cstrong\u003eHint\u003c/strong\u003e\u003cul\u003e\u003cli\u003eDynamic tracking use a non-intrusive way to sample running processes and finally visualize the internal execution details in a form of a Flame Graph\u003c/li\u003e\u003cli\u003eDynamic tracking will consume additional resources of the host, so please be careful setup a correct tracking plan\u003c/li\u003e\u003c/ul\u003e"
+    },
+    {
       "key": "project-new-select-msg",
       "val": "Select a rule for this Project to match the required one or multi processes"
+    },
+    {
+      "key": "unit-per-range-of-value-hint-msg",
+      "val": "Unit with percentage, range of value %d ~ %d %"
+    },
+    {
+      "key": "unit-sec-range-of-value-hint-msg",
+      "val": "Unit with seconds, range of values %d ~ %d seconds"
     },
     {
       "key": "user-login-msg",

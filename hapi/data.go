@@ -16,9 +16,18 @@ package hapi
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lynkdb/iomix/skv"
 )
+
+const (
+	ttlDays int = 30 // days
+)
+
+func DataExpired() uint64 {
+	return uint64(time.Now().AddDate(0, 0, ttlDays).UnixNano())
+}
 
 func DataPathProjEntry(ptype, id string) string {
 	return fmt.Sprintf("proj/%s/%s", ptype, id)
@@ -94,4 +103,8 @@ func DataPathProjProcTraceEntry(
 		proj_id,
 		Uint32ToHexString(ptime)+Uint32ToHexString(pid),
 		Uint32ToHexString(created))
+}
+
+func DataSysHostStats(timo uint32) skv.KvProgKey {
+	return skv.NewKvProgKey("hoststats", timo)
 }

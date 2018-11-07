@@ -15,6 +15,7 @@
 package v1
 
 import (
+	"regexp"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ type Proj struct {
 
 var (
 	projListCacheNum = 0
+	procNameReg      = regexp.MustCompile("^[a-zA-Z0-9-_]{1,50}$")
 )
 
 func (c *Proj) Init() int {
@@ -161,6 +163,11 @@ func (c Proj) SetAction() {
 			return
 		}
 
+		if !procNameReg.MatchString(set.Filter.ProcName) {
+			set.Error = types.NewErrorMeta("400", "Invalid Process Name")
+			return
+		}
+
 		if set.Name == "" {
 			set.Name = set.Filter.ProcName
 		}
@@ -173,6 +180,11 @@ func (c Proj) SetAction() {
 			return
 		}
 
+		if !procNameReg.MatchString(set.Filter.ProcCommand) {
+			set.Error = types.NewErrorMeta("400", "Invalid Process Coomand")
+			return
+		}
+
 	} else {
 		set.Error = types.NewErrorMeta("400", "Invalid Request : ProjFilter")
 		return
@@ -181,6 +193,59 @@ func (c Proj) SetAction() {
 	if set.Name == "" {
 		set.Error = types.NewErrorMeta("400", "Project Name Not Found")
 		return
+	}
+
+	if set.TraceOptions == nil {
+		set.TraceOptions = &hapi.ProjTraceOptions{}
+	}
+
+	var (
+		offset = hapi.DataPathProjEntry("active", "")
+		cutset = hapi.DataPathProjEntry("active", "")
+	)
+
+	if rs := data.Data.KvRevScan([]byte(offset), []byte(cutset), 100); rs.OK() {
+
+		rss := rs.KvList()
+
+		for _, v := range rss {
+
+			var prev hapi.ProjEntry
+			if err := v.Decode(&prev); err != nil {
+				continue
+			}
+
+			pok := false
+			if set.Filter.ProcId > 0 {
+				if set.Filter.ProcId == prev.Filter.ProcId {
+					pok = true
+				}
+			} else if set.Filter.ProcName != "" {
+				if set.Filter.ProcName == prev.Filter.ProcName {
+					pok = true
+				}
+			} else if set.Filter.ProcCommand != "" {
+				if set.Filter.ProcCommand == prev.Filter.ProcCommand {
+					pok = true
+				}
+			}
+
+			if pok {
+				set.Error = types.NewErrorMeta("400", "Project already exists")
+				return
+			}
+		}
+	}
+
+	if set.TraceOptions.FixTimer != nil {
+		set.TraceOptions.FixTimer.Fix()
+	} else if set.TraceOptions.Overload != nil {
+		set.TraceOptions.Overload.Fix()
+	} else {
+		set.TraceOptions.FixTimer = &hapi.ProjTraceOptionTimer{
+			Interval: hapi.ProjTraceTimeIntervalDef,
+			Duration: hapi.ProjTraceTimeDurationDef,
+		}
 	}
 
 	set.Id = hapi.ObjectId(set.Created, 8)

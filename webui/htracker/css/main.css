@@ -2,6 +2,10 @@ body {
   font-size: 12pt;
 }
 
+.htracker-monofont {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
 .htracker-table td {
   padding: 6px 10px;
   font-size: 1.1em;
@@ -91,6 +95,7 @@ body {
   padding: 0.25rem 0.5rem !important;
   font-size: 0.875rem;
   border-radius: 0.2rem;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 #htracker-module-navbar .item-status-msg.badge-light {
@@ -308,4 +313,13 @@ body {
 
 .alert ul li {
   margin-left: 0;
+}
+
+#htracker-sys-host-info {
+  margin: 10px;
+}
+
+#htracker-sys-host-info td {
+  padding: 10px 20px 10px 10px;
+  line-height: 150%;
 }

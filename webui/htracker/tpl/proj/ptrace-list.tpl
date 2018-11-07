@@ -31,12 +31,12 @@
     {[=l4i.T("Back to Process List")]}
   </button>
 </li>
-</script>
-
-<script type="text/html" id="htracker-proj-ptrace-list-optools">
 <li>
   <div id="htracker-proj-ptrace-list-status-msg" class="item-status-msg badge badge-light" style="display:none"></div>
 </li>
+</script>
+
+<script type="text/html" id="htracker-proj-ptrace-list-optools">
 <li>
   <button class="btn btn-outline-primary btn-sm" onclick="htrackerProj.ProcDyTraceNew()">
     <span class="icon16 icono-plus"></span>

@@ -6,6 +6,7 @@
   <div id="htracker-nav" class="navbar-nav mr-auto" style="margin-left: 30px">
     <a class="nav-item nav-link l4i-nav-item" href="#proj/index">{[=l4i.T("Projects")]}</a>
     <a class="nav-item nav-link l4i-nav-item" href="#proc/index">{[=l4i.T("Processes")]}</a>
+    <a class="nav-item nav-link l4i-nav-item" href="#sys/index">{[=l4i.T("System")]}</a>
   </div>
   <div class="navbar-text">
     <a class="" href="#user/sign-out" onclick="htracker.UserSignOut()">{[=l4i.T("Sign Out")]}</a>

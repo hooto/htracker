@@ -2,12 +2,16 @@
   "locale": "zh-CN",
   "items": [
     {
+      "key": "%s not found",
+      "val": "没有找到 %s"
+    },
+    {
       "key": "are you sure to remove this project",
       "val": "你确定移除这个项目"
     },
     {
       "key": "auto refresh in %s seconds",
-      "val": "%d 秒后自动更新"
+      "val": "%s 秒后自动更新"
     },
     {
       "key": "back",
@@ -42,12 +46,20 @@
       "val": "命令匹配字符串"
     },
     {
+      "key": "commit",
+      "val": "提交"
+    },
+    {
       "key": "confirm and remove",
       "val": "确认并移除"
     },
     {
+      "key": "cpu load",
+      "val": "CPU负载"
+    },
+    {
       "key": "cpu percent",
-      "val": "CPU 百分率"
+      "val": "CPU 使用率"
     },
     {
       "key": "created",
@@ -68,6 +80,10 @@
     {
       "key": "days",
       "val": "天"
+    },
+    {
+      "key": "duration",
+      "val": "持续"
     },
     {
       "key": "dynamic trace",
@@ -126,6 +142,14 @@
       "val": "小时"
     },
     {
+      "key": "interval",
+      "val": "间隔"
+    },
+    {
+      "key": "invalid %s",
+      "val": "%s 不正确"
+    },
+    {
       "key": "log size",
       "val": "日志量"
     },
@@ -174,6 +198,10 @@
       "val": "密码"
     },
     {
+      "key": "plan",
+      "val": "计划"
+    },
+    {
       "key": "proc-filter-by-cmd-msg",
       "val": "通过进程的命令行内容过滤"
     },
@@ -183,11 +211,11 @@
     },
     {
       "key": "proc-trace-not-found-help-msg",
-      "val": "\u003cul\u003e\u003cli\u003e后台任务每间隔20分钟采样一次，每次采样持续2分钟，所以请耐心等待\u003c/li\u003e\u003cli\u003e如果被采样的应用进程负载较低,则可能采样失败,系统自动在下一个间隔周期持续跟踪\u003c/li\u003e\u003c/ul\u003e"
+      "val": "\u003cul\u003e\u003cli\u003e后台任务将按照设定的追踪计划自动收集数据,这需要一些时间,请耐心等待\u003c/li\u003e\u003cli\u003e如果被采样的应用进程负载较低,则可能采样失败,系统自动在下一个间隔周期持续追踪\u003c/li\u003e\u003c/ul\u003e"
     },
     {
       "key": "proc-trace-pending-hint-msg",
-      "val": "每次采样持续2分钟，请耐心等待"
+      "val": "每次采样持续一段时间，请耐心等待"
     },
     {
       "key": "process",
@@ -223,7 +251,19 @@
     },
     {
       "key": "project-created-msg",
-      "val": "操作成功 (系统需要 2 分钟时间收集数据)"
+      "val": "操作成功. 系统需要一些时间收集数据, 请耐心等待"
+    },
+    {
+      "key": "project-new-plan-fixtimer-hint-msg",
+      "val": "按照固定时间间隔自动追踪进程"
+    },
+    {
+      "key": "project-new-plan-overload-hint-msg",
+      "val": "当进程消耗的CPU负载高于特定值时自动追踪进程"
+    },
+    {
+      "key": "project-new-plan-select-hint-msg",
+      "val": "\u003cstrong\u003e提示\u003c/strong\u003e\u003cul\u003e\u003cli\u003e动态追踪(Dynamic Tracing)使用无侵入式的方式对运行中的进程采样追踪, 最后以火焰图(Flame Graph)的形式可视化展现程序内部执行细节\u003c/li\u003e\u003cli\u003e动态追踪会额外消耗服务器计算资源, 请小心设置追踪计划时间\u003c/li\u003e\u003c/ul\u003e"
     },
     {
       "key": "project-new-select-msg",
@@ -252,6 +292,10 @@
     {
       "key": "search",
       "val": "搜索"
+    },
+    {
+      "key": "select a plan for dynamic tracing",
+      "val": "为动态追踪选择一个计划"
     },
     {
       "key": "sign in",
@@ -294,16 +338,44 @@
       "val": "成功登出, 页面跳转中 ..."
     },
     {
+      "key": "system",
+      "val": "系统"
+    },
+    {
       "key": "the last",
       "val": "最近"
+    },
+    {
+      "key": "time of duration",
+      "val": "持续时间"
+    },
+    {
+      "key": "time of interval",
+      "val": "间隔时间"
+    },
+    {
+      "key": "timer setting",
+      "val": "定时器设置"
     },
     {
       "key": "trace by %s",
       "val": "通过 %s 追踪"
     },
     {
+      "key": "trace plan",
+      "val": "追踪计划"
+    },
+    {
       "key": "tracing",
       "val": "正在追踪"
+    },
+    {
+      "key": "unit-per-range-of-value-hint-msg",
+      "val": "单位为百分率, 取值范围 %d ~ %d %"
+    },
+    {
+      "key": "unit-sec-range-of-value-hint-msg",
+      "val": "单位为秒, 取值范围 %d ~ %d 秒"
     },
     {
       "key": "updated",

@@ -59,6 +59,7 @@ htrackerProj.procListMenus = function() {
 
 htrackerProj.Index = function() {
 
+    htracker.ModuleNavbarOn();
     htracker.KeyUpEscHook = null;
     htracker.ModuleNavbarLeftClean();
 
@@ -165,6 +166,20 @@ htrackerProj.ListRefresh = function(list_active, options) {
                 } else if (data.items[i].filter.proc_cmd) {
                     filter_title.push("ProcCmd: " + data.items[i].filter.proc_cmd);
                 }
+                var plan_title = [];
+                if (data.items[i].trace_options) {
+                    if (data.items[i].trace_options.fix_timer) {
+                        plan_title.push(
+                            "FixTimer: " +
+                            l4i.T("Interval") + " " + data.items[i].trace_options.fix_timer.interval + ", " +
+                            l4i.T("Duration") + " " + data.items[i].trace_options.fix_timer.duration);
+                    } else if (data.items[i].trace_options.overload) {
+                        plan_title.push(
+                            "Overload: CPU " + data.items[i].trace_options.overload.cpu + "%, " +
+                            l4i.T("Interval") + " " + data.items[i].trace_options.overload.interval + ", " +
+                            l4i.T("Duration") + " " + data.items[i].trace_options.overload.duration);
+                    }
+                }
                 if (!data.items[i].proc_num) {
                     data.items[i].proc_num = 0;
                     waiting = true;
@@ -173,6 +188,7 @@ htrackerProj.ListRefresh = function(list_active, options) {
                     data.items[i].closed = 0;
                 }
                 data.items[i]._filter_title = filter_title.join(", ");
+                data.items[i]._plan_title = plan_title.join(", ");
             }
             if (list_active == "proj/list/history") {
                 data._history = true;
@@ -272,7 +288,7 @@ htrackerProj.EntryView = function(id) {
     });
 }
 
-htrackerProj.newEntryOptions = null;
+htrackerProj.itemNewAct = null;
 
 htrackerProj.NewEntry = function(options) {
     options = options || {};
@@ -293,9 +309,9 @@ htrackerProj.NewEntry = function(options) {
         // htrackerProj.NewEntryProcName(options);
         }
     }
-    htrackerProj.newEntryOptions = options;
+    htrackerProj.itemNewAct = options;
     if (fn) {
-        fn(htrackerProj.newEntryOptions);
+        fn(htrackerProj.itemNewAct);
     }
 }
 
@@ -322,6 +338,8 @@ htrackerProj.NewEntryProcId = function(options) {
     options.filter = options.filter || {};
     options.filter.proc_id = options.filter.proc_id || "";
 
+    htrackerProj.itemNewAct = options;
+
     l4iModal.Open({
         id: options.modal_id,
         title: l4i.T("Filter by %s", l4i.T("Process ID")),
@@ -335,10 +353,33 @@ htrackerProj.NewEntryProcId = function(options) {
         backEnable: true,
         buttons: [{
             title: l4i.T("Next"),
-            onclick: "htrackerProj.NewEntryCommit()",
+            onclick: "htrackerProj.NewEntryProcIdNext()",
             style: "btn-primary",
         }],
     });
+}
+
+htrackerProj.NewEntryProcIdNext = function() {
+
+    var alert_id = "#htracker-projset-pid-alert";
+
+    try {
+        var elem = $("#htracker_projset_proc_id");
+        if (elem && elem.val().length > 0) {
+            var v = parseInt(elem.val());
+            if (v < 1) {
+                throw l4i.T("Invalid %s", l4i.T("Process ID"));
+            }
+            htrackerProj.itemNewAct.filter.proc_id = v;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Process ID"));
+        }
+
+    } catch (err) {
+        return l4i.InnerAlert(alert_id, 'error', err);
+    }
+
+    htrackerProj.ItemNewOptPlanSelector();
 }
 
 htrackerProj.NewEntryProcName = function(options) {
@@ -349,6 +390,8 @@ htrackerProj.NewEntryProcName = function(options) {
     }
     options.filter = options.filter || {};
     options.filter.proc_name = options.filter.proc_name || "";
+
+    htrackerProj.itemNewAct = options;
 
     l4iModal.Open({
         id: options.modal_id,
@@ -363,10 +406,35 @@ htrackerProj.NewEntryProcName = function(options) {
         backEnable: true,
         buttons: [{
             title: l4i.T("Next"),
-            onclick: "htrackerProj.NewEntryCommit()",
+            onclick: "htrackerProj.NewEntryProcNameNext()",
             style: "btn-primary",
         }],
     });
+}
+
+htrackerProj.itemProcNameReg = /^[0-9a-zA-Z-_]{1,50}$/,
+
+htrackerProj.NewEntryProcNameNext = function() {
+
+    var alert_id = "#htracker-projset-pname-alert";
+
+    try {
+        var elem = $("#htracker_projset_proc_name");
+        if (elem && elem.val().length > 0) {
+			var name = elem.val();
+			if (!htrackerProj.itemProcNameReg.test(name)) {
+                throw l4i.T("Invalid %s", l4i.T("Process Name"));
+			}
+            htrackerProj.itemNewAct.filter.proc_name = name;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Process Name"));
+        }
+
+    } catch (err) {
+        return l4i.InnerAlert(alert_id, 'error', err);
+    }
+
+    htrackerProj.ItemNewOptPlanSelector();
 }
 
 htrackerProj.NewEntryProcCommand = function(options) {
@@ -377,6 +445,8 @@ htrackerProj.NewEntryProcCommand = function(options) {
     }
     options.filter = options.filter || {};
     options.filter.proc_cmd = options.filter.proc_cmd || "";
+
+    htrackerProj.itemNewAct = options;
 
     l4iModal.Open({
         id: options.modal_id,
@@ -391,36 +461,227 @@ htrackerProj.NewEntryProcCommand = function(options) {
         backEnable: true,
         buttons: [{
             title: l4i.T("Next"),
-            onclick: "htrackerProj.NewEntryCommit()",
+            onclick: "htrackerProj.NewEntryProcCommandNext()",
             style: "btn-primary",
         }],
     });
 }
 
+htrackerProj.NewEntryProcCommandNext = function() {
 
-htrackerProj.NewEntryCommit = function() {
-    var alert_id = "#htracker-projset-alert";
-    var req = {
-        filter: {},
-    };
+    var alert_id = "#htracker-projset-pcmd-alert";
+
     try {
-        var elem = $("#htracker_projset_proc_id");
-        if (elem) {
-            req.filter.proc_id = parseInt(elem.val());
-        }
-        elem = $("#htracker_projset_proc_name");
-        if (elem) {
-            req.filter.proc_name = elem.val();
-        }
-        elem = $("#htracker_projset_proc_cmd");
-        if (elem) {
-            req.filter.proc_cmd = elem.val();
+        var elem = $("#htracker_projset_proc_cmd");
+        if (elem && elem.val().length > 0) {
+			var name = elem.val();
+			if (!htrackerProj.itemProcNameReg.test(name)) {
+                throw l4i.T("Invalid %s", l4i.T("Process Command"));
+			}
+            htrackerProj.itemNewAct.filter.proc_cmd = name;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Command Match String"));
         }
 
         elem = $("#htracker_projset_name");
-        if (elem) {
-            req.name = elem.val();
+        if (elem && elem.val().length > 0) {
+            htrackerProj.itemNewAct.name = elem.val();
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Project Name"));
         }
+
+    } catch (err) {
+        return l4i.InnerAlert(alert_id, 'error', err);
+    }
+
+    htrackerProj.ItemNewOptPlanSelector();
+}
+
+htrackerProj.ItemNewOptPlanSelector = function() {
+
+    l4iModal.Open({
+        id: "proj-new-opt-plan-selector",
+        title: l4i.T("Select a Plan for dynamic tracing"),
+        tpluri: htracker.TplPath("proj/item-new-plan-selector"),
+        width: 900,
+        height: 450,
+        data: {},
+        buttons: [{
+            title: l4i.T("Close"),
+            onclick: "l4iModal.Close()",
+        }],
+    });
+}
+
+htrackerProj.ItemNewOptPlanTimer = function() {
+
+    l4iModal.Open({
+        id: "proj-new-opt-plan-timer",
+        title: l4i.T("Timer Setting"),
+        data: {
+            plan: {
+                interval: 1200,
+                duration: 120,
+            },
+            _hint_interval: l4i.T("unit-sec-range-of-value-hint-msg", 1, 86400),
+            _hint_duration: l4i.T("unit-sec-range-of-value-hint-msg", 60, 600),
+        },
+        tpluri: htracker.TplPath("proj/item-new-plan-timer"),
+        backEnable: true,
+        buttons: [{
+            title: l4i.T("Commit"),
+            onclick: "htrackerProj.ItemNewOptPlanTimerNext()",
+            style: "btn-primary",
+        }],
+    });
+}
+
+htrackerProj.ItemNewOptPlanTimerNext = function() {
+
+    var alert_id = "#htracker-projset-plan-timer-alert";
+
+    htrackerProj.itemNewAct.trace_options = {
+        fix_timer: {},
+    };
+
+    try {
+        var elem = $("#htracker_projset_plan_time_interval");
+        if (elem && elem.val().length > 0) {
+            var t = parseInt(elem.val());
+            if (t < 1 || t > 86400) {
+                throw l4i.T("Invalid %s", l4i.T("Time of interval"));
+            }
+            htrackerProj.itemNewAct.trace_options.fix_timer.interval = t;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Time of interval"));
+        }
+
+        elem = $("#htracker_projset_plan_time_duration");
+        if (elem && elem.val().length > 0) {
+            var t = parseInt(elem.val());
+            if (t < 60 || t > 600) {
+                throw l4i.T("Invalid %s", l4i.T("Time of duration"));
+            }
+            htrackerProj.itemNewAct.trace_options.fix_timer.duration = t;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Time of duration"));
+        }
+
+    } catch (err) {
+        return l4i.InnerAlert(alert_id, 'error', err);
+    }
+
+    htrackerProj.itemNewAct.active_alert_id = alert_id;
+    htrackerProj.NewEntryCommit();
+}
+
+
+htrackerProj.ItemNewOptPlanOverload = function() {
+
+    l4iModal.Open({
+        id: "proj-new-opt-plan-overload",
+        title: l4i.T("Overload Setting"),
+        data: {
+            plan: {
+                cpu: 10,
+                interval: 1200,
+                duration: 120,
+            },
+            _hint_cpu: l4i.T("unit-per-range-of-value-hint-msg", 1, 100),
+            _hint_interval: l4i.T("unit-sec-range-of-value-hint-msg", 1, 86400),
+            _hint_duration: l4i.T("unit-sec-range-of-value-hint-msg", 60, 600),
+        },
+        tpluri: htracker.TplPath("proj/item-new-plan-overload"),
+        backEnable: true,
+        buttons: [{
+            title: l4i.T("Commit"),
+            onclick: "htrackerProj.ItemNewOptPlanOverloadNext()",
+            style: "btn-primary",
+        }],
+    });
+}
+
+htrackerProj.ItemNewOptPlanOverloadNext = function() {
+
+    var alert_id = "#htracker-projset-plan-overload-alert";
+
+    htrackerProj.itemNewAct.trace_options = {
+        overload: {},
+    };
+
+    try {
+        var elem = $("#htracker_projset_plan_time_interval");
+        if (elem && elem.val().length > 0) {
+            var t = parseInt(elem.val());
+            if (t < 1 || t > 86400) {
+                throw l4i.T("Invalid %s", l4i.T("Time of interval"));
+            }
+            htrackerProj.itemNewAct.trace_options.overload.interval = t;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Time of interval"));
+        }
+
+        elem = $("#htracker_projset_plan_time_duration");
+        if (elem && elem.val().length > 0) {
+            var t = parseInt(elem.val());
+            if (t < 60 || t > 600) {
+                throw l4i.T("Invalid %s", l4i.T("Time of duration"));
+            }
+            htrackerProj.itemNewAct.trace_options.overload.duration = t;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("Time of duration"));
+        }
+
+
+        elem = $("#htracker_projset_plan_cpu");
+        if (elem && elem.val().length > 0) {
+            var t = parseInt(elem.val());
+            if (t < 1 || t > 100) {
+                throw l4i.T("Invalid %s", l4i.T("CPU load"));
+            }
+            htrackerProj.itemNewAct.trace_options.overload.cpu = t;
+        } else {
+            throw l4i.T("%s Not Found", l4i.T("CPU load"));
+        }
+
+
+    } catch (err) {
+        return l4i.InnerAlert(alert_id, 'error', err);
+    }
+
+    htrackerProj.itemNewAct.active_alert_id = alert_id;
+    htrackerProj.NewEntryCommit();
+}
+
+htrackerProj.NewEntryCommit = function() {
+    var alert_id = "#htracker-projset-alert";
+    if (htrackerProj.itemNewAct.active_alert_id) {
+        alert_id = htrackerProj.itemNewAct.active_alert_id;
+    }
+    var req = {
+        name: htrackerProj.itemNewAct.name,
+        filter: htrackerProj.itemNewAct.filter,
+        trace_options: htrackerProj.itemNewAct.trace_options,
+    };
+
+    try {
+        //     var elem = $("#htracker_projset_proc_id");
+        //     if (elem) {
+        //         req.filter.proc_id = parseInt(elem.val());
+        //     }
+        //     elem = $("#htracker_projset_proc_name");
+        //     if (elem) {
+        //         req.filter.proc_name = elem.val();
+        //     }
+        //     elem = $("#htracker_projset_proc_cmd");
+        //     if (elem) {
+        //         req.filter.proc_cmd = elem.val();
+        //     }
+
+        //     elem = $("#htracker_projset_name");
+        //     if (elem) {
+        //         req.name = elem.val();
+        //     }
     } catch (err) {
         return l4i.InnerAlert(alert_id, 'error', err);
     }
@@ -1239,7 +1500,8 @@ htrackerProj.ProcDyTraceListRefreshTop = function() {
 
             if (!err && data.items) {
 
-                for (var i in data.items) {
+                for (var i = data.items.length - 1; i >= 0; i--) {
+
                     if (!data.items[i].perf_size) {
                         data.items[i].perf_size = 0;
                     }

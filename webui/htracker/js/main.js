@@ -63,6 +63,7 @@ h3tracker.Boot = function() {
             "~/lessui/css/lessui.css" + h3tracker.urlver(),
             "~/htracker/js/proc.js" + h3tracker.urlver(),
             "~/htracker/js/proj.js" + h3tracker.urlver(),
+            "~/htracker/js/sys.js" + h3tracker.urlver(),
             "~/hchart/hchart.js" + h3tracker.urlver(),
             // "~/d3/d3.v4.js",
             // "~/d3-tip/d3-tip.js",
@@ -91,6 +92,7 @@ h3tracker.load = function() {
 
     l4i.UrlEventRegister("proc/index", htrackerProc.Index, "htracker-nav");
     l4i.UrlEventRegister("proj/index", htrackerProj.Index, "htracker-nav");
+    l4i.UrlEventRegister("sys/index", htrackerSys.Index, "htracker-nav");
 
     seajs.use(["ep"], function(EventProxy) {
 
@@ -440,6 +442,18 @@ h3tracker.UtilTimeUptime = function(sec) {
     return s.join(", ");
 }
 
+h3tracker.ModuleNavbarOn = function() {
+    $("#htracker-module-navbar").css({
+        "display": "block"
+    });
+}
+
+h3tracker.ModuleNavbarOff = function() {
+    $("#htracker-module-navbar").css({
+        "display": "none"
+    });
+}
+
 
 h3tracker.ModuleNavbarMenu = function(name, items, active) {
 
@@ -577,6 +591,7 @@ h3tracker.OpToolsClean = function() {
 
 h3tracker.timeTicker = null;
 h3tracker.timeTickLoopLen = 3000;
+h3tracker.timeTickTimeLen = 2;
 h3tracker.timeTickOpt = null;
 
 h3tracker.TimeTick = function(fn, timems, div_target) {
@@ -596,7 +611,9 @@ h3tracker.TimeTick = function(fn, timems, div_target) {
     elem.css({
         "display": "block"
     });
-    elem.text(l4i.T("auto refresh in %s seconds", timems / 1000));
+    var tstr = "" + (timems / 1000);
+    h3tracker.timeTickTimeLen = tstr.length;
+    elem.html(l4i.T("auto refresh in %s seconds", tstr));
 
 
     h3tracker.timeTickOpt = {
@@ -623,11 +640,15 @@ h3tracker.timeTickTik = function() {
             if (h3tracker.timeTickOpt.time < 1000) {
                 h3tracker.timeTickOpt.fn();
                 h3tracker.timeTickOpt = null;
-                elem.css({
-                    "display": "none"
-                });
+            // elem.css({
+            //     "display": "none"
+            // });
             } else {
-                elem.text(l4i.T("auto refresh in %s seconds", h3tracker.timeTickOpt.time / 1000));
+                var tstr = "" + (h3tracker.timeTickOpt.time / 1000);
+                for (var j = 0; j < h3tracker.timeTickTimeLen - tstr.length; j++) {
+                    tstr = "&nbsp;" + tstr;
+                }
+                elem.html(l4i.T("auto refresh in %s seconds", tstr));
             }
         } else {
             h3tracker.timeTickOpt = null;

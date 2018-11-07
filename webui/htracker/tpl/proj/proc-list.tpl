@@ -7,16 +7,16 @@
 <li>
   <button type="button" class="btn btn-outline-primary btn-sm" onclick="htrackerProj.Index()">
     <span class="icon16 icono-caretLeftCircle"></span>
-    <span>{[=l4i.T("Back to Project List")]}</span>
+    <span>{[=l4i.T("Back")]}</span>
   </button>
+</li>
+<li>
+  <div id="htracker-proj-proclist-status-msg" class="item-status-msg badge badge-light" style="display:none"></div>
 </li>
 </script>
 
 
 <script type="text/html" id="htracker-proj-proclist-optools">
-<li>
-  <div id="htracker-proj-proclist-status-msg" class="item-status-msg badge badge-light" style="display:none"></div>
-</li>
 <li>
   <button class="btn btn-outline-danger btn-sm" onclick="htrackerProj.EntryDel()">
     <span class="icon16 icono-cross"></span>
