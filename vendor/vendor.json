@@ -148,6 +148,24 @@
 			"revisionTime": "2017-10-28T12:33:51Z"
 		},
 		{
+			"checksumSHA1": "Rtqzd0HBnbwAhzTgmMIZnXJj5VU=",
+			"path": "github.com/lessos/lessgo/crypto/phash",
+			"revision": "badfd0b1d22c490b6057bc64b1224b779e24d8ba",
+			"revisionTime": "2017-10-28T12:33:51Z"
+		},
+		{
+			"checksumSHA1": "LEsiNgzPzrr8x6U8vIa0gPnwDS8=",
+			"path": "github.com/lessos/lessgo/deps/go.crypto/pbkdf2",
+			"revision": "badfd0b1d22c490b6057bc64b1224b779e24d8ba",
+			"revisionTime": "2017-10-28T12:33:51Z"
+		},
+		{
+			"checksumSHA1": "gKnmOhabfNddRXCO6oY3sT0LEPA=",
+			"path": "github.com/lessos/lessgo/deps/go.crypto/scrypt",
+			"revision": "badfd0b1d22c490b6057bc64b1224b779e24d8ba",
+			"revisionTime": "2017-10-28T12:33:51Z"
+		},
+		{
 			"checksumSHA1": "6FptCzVZOb3dQe9E0a59wbUJiks=",
 			"path": "github.com/lessos/lessgo/encoding/json",
 			"revision": "badfd0b1d22c490b6057bc64b1224b779e24d8ba",
@@ -204,6 +222,12 @@
 		{
 			"checksumSHA1": "xnCc/S88aNcLk5ypKy35jzFWSEA=",
 			"path": "github.com/shirou/gopsutil/cpu",
+			"revision": "a11c78ba2c13c5b1ee59c53296ba35f92f0ce658",
+			"revisionTime": "2018-09-27T12:43:08Z"
+		},
+		{
+			"checksumSHA1": "fz/G44QUNmjfljpwC579NLH9EJU=",
+			"path": "github.com/shirou/gopsutil/disk",
 			"revision": "a11c78ba2c13c5b1ee59c53296ba35f92f0ce658",
 			"revisionTime": "2018-09-27T12:43:08Z"
 		},
@@ -380,6 +404,12 @@
 			"path": "github.com/syndtr/goleveldb/leveldb/util",
 			"revision": "3714787470fdc924fa9904a5a37aea3908a82394",
 			"revisionTime": "2018-10-12T15:03:18Z"
+		},
+		{
+			"checksumSHA1": "OazvEzpunKCJNkAdPt+ZYI2zIxA=",
+			"path": "github.com/sysinner/incore/inutils",
+			"revision": "67ff0853c710e69b48db3f904cd2ff7d9cf973fd",
+			"revisionTime": "2018-10-28T04:15:37Z"
 		},
 		{
 			"checksumSHA1": "AFVxvTDpN2625C4lg9nLnct+Nns=",
