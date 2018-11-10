@@ -77,7 +77,6 @@ func ProcListRefresh() error {
 	mu.Unlock()
 
 	defer func() {
-		procUpdated = uint32(time.Now().Unix())
 		procPending = false
 	}()
 
@@ -137,6 +136,8 @@ func ProcListRefresh() error {
 
 	hlog.Printf("debug", "Proc Refresh %d in %v",
 		len(ProcList.Items), time.Since(tn))
+
+	procUpdated = uint32(time.Now().Unix())
 
 	return nil
 }

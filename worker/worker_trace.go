@@ -108,13 +108,13 @@ func projActionDyTrace(proj hapi.ProjEntry, entry *hapi.ProjProcEntry) error {
 		opNext = true
 	}
 
+	// hlog.Printf("info", "cpu %v, tn - traced %d, inter %d",
+	// 	opNext, tn-entry.Traced, timer.Interval)
+
 	if entry.OpAction != hapi.ProjProcEntryOpTraceForce &&
 		((entry.Traced+timer.Interval) >= tn || !opNext) {
 		return nil
 	}
-
-	// hlog.Printf("info", "cpu %v, tn %d, traced %d, inter %d",
-	// 	opNext, tn, entry.Traced, timer.Interval)
 
 	entry.OpAction = 0
 	entry.Tracing = &hapi.ProjProcTraceEntry{
