@@ -45,7 +45,7 @@ var (
 	stats_host_names = []string{
 		"ram/us", "ram/cc",
 		"net/rs", "net/ws",
-		"cpu/sys", "cpu/user",
+		"cpu/p", "cpu/sys", "cpu/user",
 		"fs/sp/rn", "fs/sp/rs", "fs/sp/wn", "fs/sp/ws",
 	}
 	sync_vols_last int64 = 0
@@ -159,10 +159,12 @@ func host_stats_refresh() {
 	}
 
 	// CPU
-	cio, _ := ps_cpu.Times(false)
+	// cio, _ := ps_cpu.Times(false)
+	cio, _ := ps_cpu.Percent(10e9, false)
 	if len(cio) > 0 {
-		host_stats.SampleSync("cpu/sys", timo, int64(cio[0].User*float64(1e9)))
-		host_stats.SampleSync("cpu/user", timo, int64(cio[0].System*float64(1e9)))
+		// host_stats.SampleSync("cpu/sys", timo, int64(cio[0].User*float64(1e9)))
+		// host_stats.SampleSync("cpu/user", timo, int64(cio[0].System*float64(1e9)))
+		host_stats.SampleSync("cpu/p", timo, int64(cio[0]*100))
 	}
 
 	// Storage IO

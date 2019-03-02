@@ -164,13 +164,18 @@ htrackerSys.NodeStats = function(time_past) {
         tc: 180,
         tp: htrackerSys.node_active_past,
         is: [
+            /**
+                {
+                    n: "cpu/sys",
+                    d: true
+                },
+                {
+                    n: "cpu/user",
+                    d: true
+                },
+            */
             {
-                n: "cpu/sys",
-                d: true
-            },
-            {
-                n: "cpu/user",
-                d: true
+                n: "cpu/p"
             },
             {
                 n: "ram/us"
@@ -268,20 +273,7 @@ htrackerSys.NodeStats = function(time_past) {
 
             //
             var stats_cpu = l4i.Clone(htrackerSys.hchart_def);
-            max = htrackerSys.nodeStatsFeedMaxValue(stats, "cpu/user");
-            if (max > 1000000000) {
-                stats_cpu.options.title = l4i.T("CPU (Seconds / %s)", tc_title);
-                stats_cpu._fix = 1000000000;
-            } else if (max > 1000000) {
-                stats_cpu.options.title = l4i.T("CPU (Millisecond / %s)", tc_title);
-                stats_cpu._fix = 1000000;
-            } else if (max > 1000) {
-                stats_cpu.options.title = l4i.T("CPU (Microsecond / %s)", tc_title);
-                stats_cpu._fix = 1000;
-            } else {
-                stats_cpu.options.title = l4i.T("CPU (Nanosecond / %s)", tc_title);
-            }
-
+            stats_cpu.options.title = l4i.T("CPU Usage %");
 
             //
             var stats_ram = l4i.Clone(htrackerSys.hchart_def);
@@ -328,11 +320,12 @@ htrackerSys.NodeStats = function(time_past) {
                 var labels = [];
                 var fix = 1;
                 switch (v.name) {
-                    case "cpu/sys":
-                    case "cpu/user":
-                        if (stats_cpu._fix && stats_cpu._fix > 1) {
-                            fix = stats_cpu._fix;
-                        }
+                    /**
+                                case "cpu/sys":
+                                case "cpu/user":
+                    */
+                    case "cpu/p":
+                        fix = 100;
                         break;
 
                     case "ram/us":
@@ -377,15 +370,22 @@ htrackerSys.NodeStats = function(time_past) {
                 }
 
                 switch (v.name) {
-                    case "cpu/sys":
-                        stats_cpu.data.labels = labels;
-                        dataset.label = "System";
-                        stats_cpu.data.datasets.push(dataset);
-                        break;
+                    /**
+                                case "cpu/sys":
+                                    stats_cpu.data.labels = labels;
+                                    dataset.label = "System";
+                                    stats_cpu.data.datasets.push(dataset);
+                                    break;
 
-                    case "cpu/user":
+                                case "cpu/user":
+                                    stats_cpu.data.labels = labels;
+                                    dataset.label = "User";
+                                    stats_cpu.data.datasets.push(dataset);
+                                    break;
+                    */
+                    case "cpu/p":
                         stats_cpu.data.labels = labels;
-                        dataset.label = "User";
+                        dataset.label = "CPU Percent";
                         stats_cpu.data.datasets.push(dataset);
                         break;
 
