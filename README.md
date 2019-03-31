@@ -49,8 +49,7 @@ you can access the hooto-tracker via **http://127.0.0.1:9520/** with your browse
 
 ## Online Demo
 
-* Demo Url (US) [https://www.sysinner.com/demo/htracker/](https://www.sysinner.com/demo/htracker/) (Password: 123456)
-* Demo Url (China) [http://www.sysinner.cn/demo/htracker/](http://www.sysinner.cn/demo/htracker/) (Password: 123456)
+* Demo Url [https://www.sysinner.com/demo/htracker/](https://www.sysinner.com/demo/htracker/) (Password: 123456)
 
 
 ## Project
