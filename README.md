@@ -13,7 +13,25 @@ hooto tracker is a web frontend visualization and analysis tool for APM (applica
 
 # Install
 
-## install dependency packages
+## install from YUM (CentOS 7.x, RHEL 7.x, ...)
+
+### step 1: setup yum repo
+
+``` shell
+wget https://www.hooto.com/repo/el/hooto.repo -O /etc/yum.repos.d/hooto.repo
+```
+
+### step 2: install with yum
+``` shell
+yum install -y hooto-tracker
+
+systemctl start hooto-tracker
+```
+
+
+## install from source code
+
+### step 1: install dependency packages
 
 ``` shell
 # CentOS 7.x
@@ -24,7 +42,7 @@ sudo yum install -y perf golang
 sudo apt install linux-tools-commom linux-tools-generic golang
 ```
 
-## download source code, build, install and start the server
+### step 2: download source code, build, install and start the server
 
 ``` shell
 # download source code
@@ -40,6 +58,7 @@ sudo make install
 # start server
 systemctl start hooto-tracker
 ```
+
 
 # Getting Started
 
