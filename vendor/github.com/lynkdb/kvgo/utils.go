@@ -15,14 +15,21 @@
 package kvgo
 
 import (
+	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
+	mrand "math/rand"
 )
 
-func t_ns_cat(ns byte, key []byte) []byte {
+func keyExpireEncode(ns byte, expired uint64, key []byte) []byte {
+	return append(append([]byte{ns}, uint64ToBytes(expired)...), key...)
+}
+
+func keyEncode(ns byte, key []byte) []byte {
 	return append([]byte{ns}, key...)
 }
 
-func bytes_clone(src []byte) []byte {
+func bytesClone(src []byte) []byte {
 
 	dst := make([]byte, len(src))
 	copy(dst, src)
@@ -30,10 +37,30 @@ func bytes_clone(src []byte) []byte {
 	return dst
 }
 
-func uint64_to_bytes(v uint64) []byte {
+func uint64ToBytes(v uint64) []byte {
 
 	bs := make([]byte, 8)
 	binary.BigEndian.PutUint64(bs, v)
 
 	return bs
+}
+
+func randHexString(length int) string {
+
+	length = length / 2
+	if length < 1 {
+		length = 1
+	}
+	if n := length % 2; n > 0 {
+		length += n
+	}
+
+	bs := make([]byte, length)
+	if _, err := rand.Read(bs); err != nil {
+		for i := range bs {
+			bs[i] = uint8(mrand.Intn(256))
+		}
+	}
+
+	return hex.EncodeToString(bs)
 }

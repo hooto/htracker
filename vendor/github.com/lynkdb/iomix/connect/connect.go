@@ -38,6 +38,9 @@ type ConnOptions struct {
 	// Driver ia a database/storage package that implemented the Connector interface.
 	Driver types.NameIdentifier `json:"driver"`
 
+	// Data dynamic link library
+	DriverPlugin types.NameIdentifier `json:"driver_plugin,omitempty"`
+
 	// Items defines configurations used by driver
 	Items types.Labels `json:"items"`
 }

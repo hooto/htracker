@@ -184,10 +184,16 @@
 			"revisionTime": "2018-05-15T09:12:35Z"
 		},
 		{
-			"checksumSHA1": "2IIW9hImm4Mb42wLe9j5QMarg4E=",
+			"checksumSHA1": "ts+vs7qYnRcAdrdAMyKNSV0Mpjo=",
 			"path": "github.com/lynkdb/iomix/connect",
-			"revision": "6ef5fdf7f6597325f19f3bf6f2871f01bda2206e",
-			"revisionTime": "2018-09-11T13:53:06Z"
+			"revision": "bae5d0f6b81ae928f5beefe73bfd658e5deaf290",
+			"revisionTime": "2019-11-19T11:38:49Z"
+		},
+		{
+			"checksumSHA1": "ikd4sgF+82XOSwR4j/PLnSCxR54=",
+			"path": "github.com/lynkdb/iomix/sko",
+			"revision": "4b1d84a6047b52ac5053569ed608ffc36134a7b6",
+			"revisionTime": "2020-02-17T14:49:53Z"
 		},
 		{
 			"checksumSHA1": "qXiHQTNPE3u6V3XfOPgvgGhu2xk=",
@@ -196,10 +202,10 @@
 			"revisionTime": "2018-09-11T13:53:06Z"
 		},
 		{
-			"checksumSHA1": "iQVQcakt8bonYbnw41zysoNzUrU=",
+			"checksumSHA1": "t/jRYT9VcUBURwHhR5NkoJLk63M=",
 			"path": "github.com/lynkdb/kvgo",
-			"revision": "44325a0ccadbb16df56de84ca6fe80bd1bf34bc3",
-			"revisionTime": "2018-10-21T05:11:22Z"
+			"revision": "bb93ae222b8a579362d5b3a7d1b14d36813f37c9",
+			"revisionTime": "2020-02-01T09:31:04Z"
 		},
 		{
 			"checksumSHA1": "eqs9e0Fw1wlUZCj/ZtrSwnPsJ54=",

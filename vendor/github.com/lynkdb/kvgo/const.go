@@ -15,35 +15,34 @@
 package kvgo
 
 const (
-	Version = "0.1.1"
+	Version = "0.2.0"
+)
 
-	ns_meta     uint8 = 4
-	ns_ttl      uint8 = 5
-	ns_kv       uint8 = 8
-	ns_prog_ttl uint8 = 32
-	ns_prog_def uint8 = 36
-	ns_prog_cut uint8 = 63
-	ns_prog_x   uint8 = 64
+const (
+	nsKeySys  uint8 = 16
+	nsKeyMeta uint8 = 17
+	nsKeyData uint8 = 18
+	nsKeyLog  uint8 = 19
+	nsKeyTtl  uint8 = 20
+)
 
-	prog_ttl_zero uint64 = 1500000000000000000
+const (
+	ldbNotFound            = "leveldb: not found"
+	objAcceptTTL           = uint64(3000)
+	workerLocalExpireSleep = 200e6
+	workerLocalExpireLimit = 200
+	workerClusterSleep     = 1e9
 )
 
 var (
-	ns_prog_x_incr = []byte{ns_prog_x, 1}
+	keySysInstanceId = append([]byte{nsKeySys}, []byte("inst:id")...)
+	keySysLogCutset  = append([]byte{nsKeySys}, []byte("log:cutset")...)
 )
 
-// PKV
-// kv    1|key                 : ns|n|meta|value
+func keySysLogAsync(hostport string) []byte {
+	return append([]byte{nsKeySys}, []byte("log:async:"+hostport)...)
+}
 
-// hash  2|n|key               : ns|meta
-// hash  2|n|key|field         : ns|n|meta|value
-
-// sets  2|n|key               : ns|meta
-// sets  2|n|key|field         : ns
-
-// zset  2|n|key               : ns|meta
-// zset  2|n|key|field         : ns|n|meta|value
-// zset  3|n|key|n|score|field : ns
-
-// list  2|n|key               : ns|meta
-// list  2|n|key|incr          : ns|n|meta|value
+func keySysIncrCutset(ns string) []byte {
+	return append([]byte{nsKeySys}, []byte("incr:cutset:"+ns)...)
+}

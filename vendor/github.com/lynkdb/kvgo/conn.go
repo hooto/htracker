@@ -16,139 +16,188 @@ package kvgo
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/lynkdb/iomix/connect"
+	"github.com/hooto/hlog4g/hlog"
+	"github.com/hooto/iam/iamauth"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+
+	"github.com/lynkdb/iomix/connect"
 )
 
 var (
-	conn_mu sync.Mutex
-	conns   = map[string]*Conn{}
+	connMu sync.Mutex
+	conns  = map[string]*Conn{}
 )
 
 type Conn struct {
-	db      *leveldb.DB
-	opts    *options
-	clients int
+	instId     string
+	db         *leveldb.DB
+	opts       *Config
+	clients    int
+	mu         sync.RWMutex
+	logMu      sync.RWMutex
+	logOffset  uint64
+	logCutset  uint64
+	incrMu     sync.RWMutex
+	incrOffset uint64
+	incrCutset uint64
+	cluster    *ServiceImpl
+	serverKey  *iamauth.AuthKey
+	keyMu      sync.RWMutex
+	keys       map[string]*iamauth.AuthKey
 }
 
-type options struct {
-	DataDir                string `json:"datadir,omitempty"`
-	WriteBuffer            int    `json:"write_buffer,omitempty"`
-	BlockCacheCapacity     int    `json:"block_cache_capacity,omitempty"`
-	CacheCapacity          int    `json:"cache_capacity,omitempty"`
-	OpenFilesCacheCapacity int    `json:"open_files_cache_capacity,omitempty"`
-	CompactionTableSize    int    `json:"compaction_table_size,omitempty"`
-}
+func Open(args ...interface{}) (*Conn, error) {
 
-func (opts *options) fix() {
-
-	if opts.WriteBuffer < 4 {
-		opts.WriteBuffer = 4
-	} else if opts.WriteBuffer > 128 {
-		opts.WriteBuffer = 128
+	if len(args) < 1 {
+		return nil, errors.New("no config setup")
 	}
 
-	if opts.CacheCapacity < 8 {
-		opts.CacheCapacity = 8
-	} else if opts.CacheCapacity > 4096 {
-		opts.CacheCapacity = 4096
-	}
-
-	if opts.BlockCacheCapacity < 2 {
-		opts.BlockCacheCapacity = 2
-	} else if opts.BlockCacheCapacity > 32 {
-		opts.BlockCacheCapacity = 32
-	}
-
-	if opts.OpenFilesCacheCapacity < 500 {
-		opts.OpenFilesCacheCapacity = 500
-	} else if opts.OpenFilesCacheCapacity > 30000 {
-		opts.OpenFilesCacheCapacity = 30000
-	}
-
-	if opts.CompactionTableSize < 2 {
-		opts.CompactionTableSize = 2
-	} else if opts.CompactionTableSize > 128 {
-		opts.CompactionTableSize = 128
-	}
-}
-
-func Open(copts connect.ConnOptions) (*Conn, error) {
-
-	conn_mu.Lock()
-	defer conn_mu.Unlock()
+	connMu.Lock()
+	defer connMu.Unlock()
 
 	var (
 		cn = &Conn{
-			opts:    &options{},
-			clients: 1,
+			clients:    1,
+			logOffset:  0,
+			logCutset:  0,
+			incrOffset: 0,
+			incrCutset: 0,
+			serverKey:  authKeyDefault(),
+			keys:       map[string]*iamauth.AuthKey{},
+			opts:       &Config{},
 		}
 		err error
 	)
 
-	if v, ok := copts.Items.Get("data_dir"); !ok {
-		return nil, errors.New("No data_dir Found")
-	} else {
-		cn.opts.DataDir = filepath.Clean(v.String())
+	for _, cfg := range args {
+
+		switch cfg.(type) {
+
+		case Config:
+			c := cfg.(Config)
+			cn.opts = &c
+
+		case *Config:
+			cn.opts = cfg.(*Config)
+
+		case ConfigStorage:
+			c := cfg.(ConfigStorage)
+			cn.opts.Storage = c
+
+		case ConfigServer:
+			cn.opts.Server = cfg.(ConfigServer)
+
+		case ConfigPerformance:
+			cn.opts.Performance = cfg.(ConfigPerformance)
+
+		case ConfigFeature:
+			cn.opts.Feature = cfg.(ConfigFeature)
+
+		case ConfigCluster:
+			cn.opts.Cluster = cfg.(ConfigCluster)
+
+		case connect.ConnOptions:
+			if cn.opts, err = configParse(cfg.(connect.ConnOptions)); err != nil {
+				return nil, err
+			}
+
+		default:
+			return nil, errors.New("invalid config")
+		}
 	}
 
-	if pconn, ok := conns[cn.opts.DataDir]; ok {
+	cn.opts.reset()
+
+	if err := cn.opts.Valid(); err != nil {
+		return nil, err
+	}
+
+	if cn.opts.Storage.DataDirectory == "" {
+		cn.opts.ClientConnectEnable = true
+	}
+
+	if cn.opts.ClientConnectEnable {
+
+		if err := cn.clusterStart(); err != nil {
+			cn.Close()
+			return nil, err
+		}
+		hlog.Printf("info", "kvgo client connected")
+		return cn, nil
+	}
+
+	if pconn, ok := conns[cn.opts.Storage.DataDirectory]; ok {
 		pconn.clients++
 		return pconn, nil
 	}
 
-	if v, ok := copts.Items.Get("lynkdb/sskv/write_buffer"); ok {
-		cn.opts.WriteBuffer = v.Int()
+	if cn.opts.Storage.DataDirectory != "" {
+
+		dir := filepath.Clean(fmt.Sprintf("%s/%d_%d_%d", cn.opts.Storage.DataDirectory, 10, 0, 0))
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			return cn, err
+		}
+
+		ldbCfg := &opt.Options{
+			WriteBuffer:            cn.opts.Performance.WriteBufferSize * opt.MiB,
+			BlockCacheCapacity:     cn.opts.Performance.BlockCacheSize * opt.MiB,
+			CompactionTableSize:    cn.opts.Performance.MaxTableSize * opt.MiB,
+			OpenFilesCacheCapacity: cn.opts.Performance.MaxOpenFiles,
+			Filter:                 filter.NewBloomFilter(10),
+		}
+		if cn.opts.Feature.TableCompressName == "snappy" {
+			ldbCfg.Compression = opt.SnappyCompression
+		} else {
+			ldbCfg.Compression = opt.NoCompression
+		}
+
+		if cn.db, err = leveldb.OpenFile(dir, ldbCfg); err != nil {
+			return nil, err
+		}
+
+		if bs, err := cn.db.Get(keySysInstanceId, nil); err == nil {
+			cn.instId = string(bs)
+		} else if err.Error() == ldbNotFound {
+			cn.instId = randHexString(16)
+			if err := cn.db.Put(keySysInstanceId, []byte(cn.instId), nil); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
-	if v, ok := copts.Items.Get("lynkdb/sskv/block_cache_capacity"); ok {
-		cn.opts.BlockCacheCapacity = v.Int()
+	if err := cn.clusterStart(); err != nil {
+
+		if cn.db != nil {
+			cn.db.Close()
+		}
+
+		return nil, err
 	}
 
-	if v, ok := copts.Items.Get("lynkdb/sskv/open_files_cache_capacity"); ok {
-		cn.opts.OpenFilesCacheCapacity = v.Int()
-	}
+	go cn.workerLocal()
 
-	if v, ok := copts.Items.Get("lynkdb/sskv/compaction_table_size"); ok {
-		cn.opts.CompactionTableSize = v.Int()
-	}
+	hlog.Printf("info", "kvgo %s started", cn.instId)
 
-	cn.opts.fix()
+	conns[cn.opts.Storage.DataDirectory] = cn
 
-	if err := os.MkdirAll(cn.opts.DataDir, 0750); err != nil {
-		return cn, err
-	}
-
-	cn.db, err = leveldb.OpenFile(cn.opts.DataDir, &opt.Options{
-		WriteBuffer:            cn.opts.WriteBuffer * opt.MiB,
-		BlockCacheCapacity:     cn.opts.BlockCacheCapacity * opt.MiB,
-		OpenFilesCacheCapacity: cn.opts.OpenFilesCacheCapacity,
-		CompactionTableSize:    cn.opts.CompactionTableSize * opt.MiB,
-		Compression:            opt.SnappyCompression,
-		Filter:                 filter.NewBloomFilter(10),
-	})
-
-	if err == nil {
-		cn.ttl_worker()
-	}
-
-	conns[cn.opts.DataDir] = cn
-
-	return cn, err
+	return cn, nil
 }
 
 func (cn *Conn) Close() error {
 
-	conn_mu.Lock()
-	defer conn_mu.Unlock()
+	connMu.Lock()
+	defer connMu.Unlock()
 
-	if pconn, ok := conns[cn.opts.DataDir]; ok {
+	if pconn, ok := conns[cn.opts.Storage.DataDirectory]; ok {
 
 		if pconn.clients > 1 {
 			pconn.clients--
@@ -156,11 +205,15 @@ func (cn *Conn) Close() error {
 		}
 	}
 
+	if cn.cluster != nil && cn.cluster.sock != nil {
+		cn.cluster.sock.Close()
+	}
+
 	if cn.db != nil {
 		cn.db.Close()
 	}
 
-	delete(conns, cn.opts.DataDir)
+	delete(conns, cn.opts.Storage.DataDirectory)
 
 	return nil
 }
