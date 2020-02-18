@@ -27,22 +27,22 @@ var (
 //
 type ConnOptions struct {
 	//
-	Name types.NameIdentifier `json:"name"`
+	Name types.NameIdentifier `json:"name" toml:"name"`
 
 	// Connector is the interface that must be implemented by a database/storage driver.
 	// example:
 	// 	iomix/fs/Connector
 	// 	iomix/skv/Connector
-	Connector types.NameIdentifier `json:"connector"`
+	Connector types.NameIdentifier `json:"connector" toml:"connector"`
 
 	// Driver ia a database/storage package that implemented the Connector interface.
-	Driver types.NameIdentifier `json:"driver"`
+	Driver types.NameIdentifier `json:"driver" toml:"driver"`
 
 	// Data dynamic link library
-	DriverPlugin types.NameIdentifier `json:"driver_plugin,omitempty"`
+	DriverPlugin types.NameIdentifier `json:"driver_plugin,omitempty" toml:"driver_plugin,omitempty"`
 
 	// Items defines configurations used by driver
-	Items types.Labels `json:"items"`
+	Items types.Labels `json:"items" toml:"items"`
 }
 
 func (o *ConnOptions) Value(name string) string {

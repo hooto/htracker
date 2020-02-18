@@ -21,22 +21,42 @@ import (
 	"strings"
 )
 
+var (
+	hostKernel = ""
+)
+
 func ResSysHostKernel() string {
 
-	cmd, err := exec.LookPath("uname")
-	if err == nil {
-
-		rs, err := exec.Command(cmd, "-r").Output()
+	if hostKernel == "" {
+		cmd, err := exec.LookPath("uname")
 		if err == nil {
-			return strings.TrimSpace(string(rs))
+			rs, err := exec.Command(cmd, "-r").Output()
+			if err == nil {
+				hostKernel = strings.TrimSpace(string(rs))
+			}
 		}
 	}
 
-	return "unknown"
+	return hostKernel
 }
 
 func Uint16ToHexString(v uint16) string {
 	bs := make([]byte, 2)
 	binary.BigEndian.PutUint16(bs, v)
 	return hex.EncodeToString(bs)
+}
+
+func Uint32ToHexString(v uint32) string {
+	bs := make([]byte, 4)
+	binary.BigEndian.PutUint32(bs, v)
+	return hex.EncodeToString(bs)
+}
+
+func ArrayUint32Has(ar []uint32, v uint32) bool {
+	for _, v2 := range ar {
+		if v2 == v {
+			return true
+		}
+	}
+	return false
 }

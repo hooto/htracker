@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	Version            = "0.9.1"
+	Version            = "0.9.2"
 	printDefault uint8 = iota
 	printFormat
 )
@@ -200,9 +200,6 @@ func Printf(level, format string, a ...interface{}) {
 }
 
 func Flush() error {
-
-	locker.Lock()
-	defer locker.Unlock()
 
 	var e error
 

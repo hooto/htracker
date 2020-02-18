@@ -581,6 +581,7 @@ func (r *Reader) readRawBlock(bh blockHandle, verifyChecksum bool) ([]byte, erro
 	case blockTypeSnappyCompression:
 		decLen, err := snappy.DecodedLen(data[:bh.length])
 		if err != nil {
+			r.bpool.Put(data)
 			return nil, r.newErrCorruptedBH(bh, err.Error())
 		}
 		decData := r.bpool.Get(decLen)
@@ -785,6 +786,10 @@ func (r *Reader) getDataIterErr(dataBH blockHandle, slice *util.Range, verifyChe
 // range. A nil Range.Start is treated as a key before all keys in the
 // table. And a nil Range.Limit is treated as a key after all keys in
 // the table.
+//
+// WARNING: Any slice returned by interator (e.g. slice returned by calling
+// Iterator.Key() or Iterator.Key() methods), its content should not be modified
+// unless noted otherwise.
 //
 // The returned iterator is not safe for concurrent use and should be released
 // after use.

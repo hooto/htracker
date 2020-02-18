@@ -1,4 +1,4 @@
-// Copyright 2017 The hchart Authors, All rights reserved.
+// Copyright 2017 Eryx <evorui аt gmail dοt com>, All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,16 +36,13 @@ type ConfigCommon struct {
 	Prefix   string
 }
 
-func Initialize(prefix string) error {
+func Initialize() error {
 
-	var err error
-
-	if prefix == "" {
-		prefix, err = filepath.Abs(filepath.Dir(os.Args[0]) + "/..")
-		if err != nil {
-			prefix = "/opt/hooto/hchart"
-		}
+	prefix, err := filepath.Abs(filepath.Dir(os.Args[0]) + "/..")
+	if err != nil {
+		prefix = "/opt/hooto/hchart"
 	}
+
 	reg, _ := regexp.Compile("/+")
 	Config.Prefix = "/" + strings.Trim(reg.ReplaceAllString(prefix, "/"), "/")
 

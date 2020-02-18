@@ -124,7 +124,7 @@ func (it *LangList) Locale(locale string) *LangLocaleList {
 
 func (it *LangList) Sync(cfg LangLocaleList) *LangLocaleList {
 
-	cfg.Locale = strings.Replace(cfg.Locale, "_", "-", 1)
+	cfg.Locale = strings.ToLower(strings.Replace(cfg.Locale, "_", "-", 1))
 
 	entry := it.Entry(cfg.Locale)
 
