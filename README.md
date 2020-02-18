@@ -46,10 +46,8 @@ sudo apt install linux-tools-commom linux-tools-generic golang
 
 ``` shell
 # download source code
-git clone https://github.com/hooto/htracker.git
+git clone --recurse-submodules https://github.com/hooto/htracker.git
 cd htracker
-git submodule update
-
 
 # build and install
 make

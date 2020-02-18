@@ -150,6 +150,10 @@
       "val": "%s 不正确"
     },
     {
+      "key": "invalid password",
+      "val": "密码不正确"
+    },
+    {
       "key": "log size",
       "val": "日志量"
     },

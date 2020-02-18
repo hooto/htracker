@@ -87,15 +87,12 @@ func (c Sys) StatsFeedAction() {
 
 	feed := hapi.NewPbStatsSampleFeed(fq.TimeCycle)
 
-	if rs := data.Data.KvProgScan(
+	if rs := data.Data.NewReader(nil).KeyRangeSet(
 		hapi.DataSysHostStats(fq.TimeStart),
-		hapi.DataSysHostStats(fq.TimeCutset+600),
-		10000,
-	); rs.OK() {
+		hapi.DataSysHostStats(fq.TimeCutset+600)).LimitNumSet(10000).Query(); rs.OK() {
 
-		ls := rs.KvList()
 		var ifeed hapi.PbStatsIndexFeed
-		for _, v := range ls {
+		for _, v := range rs.Items {
 
 			if err := v.Decode(&ifeed); err != nil {
 				continue

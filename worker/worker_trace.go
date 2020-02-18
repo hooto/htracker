@@ -23,7 +23,6 @@ import (
 
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/lessos/lessgo/encoding/json"
-	"github.com/lynkdb/iomix/skv"
 
 	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/data"
@@ -131,18 +130,11 @@ func projActionDyTrace(proj hapi.ProjEntry, entry *hapi.ProjProcEntry) error {
 		entry.Tracing.Created,
 	)
 
-	data.Data.KvProgPut(
-		tkey,
-		skv.NewKvEntry(entry.Tracing),
-		&skv.KvProgWriteOptions{
-			Expired: hapi.DataExpired(),
-			Actions: skv.KvProgOpFoldMeta,
-		},
-	)
+	data.Data.NewWriter(tkey, entry.Tracing).ExpireSet(hapi.DataExpired).Commit()
 
 	timer.Fix()
 
-	go func(proj_id string, entry *hapi.ProjProcEntry, tkey skv.KvProgKey,
+	go func(proj_id string, entry *hapi.ProjProcEntry, tkey []byte,
 		timer_d uint32) {
 
 		var (
@@ -215,14 +207,7 @@ func projActionDyTrace(proj hapi.ProjEntry, entry *hapi.ProjProcEntry) error {
 			entry.Tracing.PerfSize = 0
 		}
 
-		data.Data.KvProgPut(
-			tkey,
-			skv.NewKvEntry(entry.Tracing),
-			&skv.KvProgWriteOptions{
-				Expired: hapi.DataExpired(),
-				Actions: skv.KvProgOpFoldMeta,
-			},
-		)
+		data.Data.NewWriter(tkey, entry.Tracing).ExpireSet(hapi.DataExpired).Commit()
 
 		entry.Tracing = nil
 

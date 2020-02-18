@@ -21,7 +21,6 @@ import (
 
 	"github.com/lessos/lessgo/encoding/json"
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/skv"
 
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
@@ -29,7 +28,7 @@ import (
 )
 
 var (
-	ttlLimit int = 30 // days
+	ttlLimit int64 = 86400 * 30 * 1000 // 30 days
 )
 
 func (c Proj) ProcListAction() {
@@ -59,19 +58,19 @@ func (c Proj) ProcListAction() {
 		cutset = hapi.DataPathProjProcEntry(ptype, proj_id, 1, 0)
 	)
 
-	rs := data.Data.KvProgRevScan(offset, cutset, limit)
+	rs := data.Data.NewReader(nil).KeyRangeSet(offset, cutset).
+		ModeRevRangeSet(true).LimitNumSet(int64(limit)).Query()
 	if !rs.OK() {
 		return
 	}
 
-	rs.KvEach(func(entry *skv.ResultEntry) int {
+	for _, v := range rs.Items {
 		var set hapi.ProjProcEntry
-		if err := entry.Decode(&set); err == nil {
+		if err := v.Decode(&set); err == nil {
 			set.ProjId = proj_id
 			sets.Items = append(sets.Items, &set)
 		}
-		return 0
-	})
+	}
 
 	sets.Kind = "ProjProcList"
 }
@@ -120,7 +119,7 @@ func (c Proj) ProcStatsAction() {
 	}
 	limit += 2
 
-	if rs := data.Data.KvProgScan(
+	if rs := data.Data.NewReader(nil).KeyRangeSet(
 		hapi.DataPathProjProcStatsEntry(
 			proc_time,
 			proc_id,
@@ -130,13 +129,10 @@ func (c Proj) ProcStatsAction() {
 			proc_time,
 			proc_id,
 			fq.TimeCutset+600,
-		),
-		limit,
-	); rs.OK() {
+		)).LimitNumSet(int64(limit)).Query(); rs.OK() {
 
-		ls := rs.KvList()
 		var ifeed hapi.PbStatsIndexFeed
-		for _, v := range ls {
+		for _, v := range rs.Items {
 
 			if err := v.Decode(&ifeed); err != nil {
 				continue
@@ -254,7 +250,7 @@ func (c Proj) ProcTraceListAction() {
 
 	proc := status.ProcList.Entry(int32(proc_id), 0)
 
-	if rs := data.Data.KvProgRevScan(
+	if rs := data.Data.NewReader(nil).KeyRangeSet(
 		hapi.DataPathProjProcTraceEntry(
 			proj_id,
 			proc_time,
@@ -266,12 +262,9 @@ func (c Proj) ProcTraceListAction() {
 			proc_time,
 			proc_id,
 			cutset,
-		),
-		limit,
-	); rs.OK() {
+		)).ModeRevRangeSet(true).LimitNumSet(int64(0)).Query(); rs.OK() {
 
-		ls := rs.KvList()
-		for _, v := range ls {
+		for _, v := range rs.Items {
 			var item hapi.ProjProcTraceEntry
 			if err := v.Decode(&item); err == nil {
 
@@ -283,17 +276,11 @@ func (c Proj) ProcTraceListAction() {
 					if proc == nil || proc.Tracing == nil || proc.Tracing.Created != item.Created {
 						item.Updated = uint32(time.Now().Unix())
 						item.PerfSize = 0
-						data.Data.KvProgPut(
+						data.Data.NewWriter(
 							hapi.DataPathProjProcTraceEntry(
 								item.ProjId, item.Pcreated, uint32(item.Pid),
 								item.Created,
-							),
-							skv.NewKvEntry(item),
-							&skv.KvProgWriteOptions{
-								Expired: uint64(time.Now().AddDate(0, 0, ttlLimit).UnixNano()),
-								Actions: skv.KvProgOpFoldMeta,
-							},
-						)
+							), item).ExpireSet(ttlLimit).Commit()
 					}
 				}
 
@@ -301,21 +288,17 @@ func (c Proj) ProcTraceListAction() {
 			}
 		}
 
-		if len(ls) >= limit {
+		if len(rs.Items) >= limit {
 			mkey := hapi.DataPathProjProcTraceEntry(
-				proj_id,
-				proc_time,
-				proc_id,
-				0)
-			if rs2 := data.Data.KvProgGet(mkey); rs2.OK() {
-				if meta := rs2.Meta(); meta != nil {
-					sets.Total = int64(meta.Num)
-				}
+				proj_id, proc_time, proc_id, 0)
+			if rs2 := data.Data.NewReader(nil).KeyRangeSet(mkey, mkey).
+				LimitNumSet(1000).Query(); rs2.OK() {
+				sets.Total = int64(len(rs2.Items)) // TOPO
 			}
 		}
 
 		if sets.Total < 1 {
-			sets.Total = int64(len(ls))
+			sets.Total = int64(len(rs.Items))
 		}
 	}
 
@@ -332,14 +315,8 @@ func (c Proj) ProcTraceGraphAction() {
 		meta_type = "image/svg+xml"
 	)
 
-	rs := data.Data.KvProgGet(
-		hapi.DataPathProjProcTraceEntry(
-			proj_id,
-			proc_time,
-			proc_id,
-			created,
-		))
-	if rs.OK() {
+	if rs := data.Data.NewReader(hapi.DataPathProjProcTraceEntry(
+		proj_id, proc_time, proc_id, created)).Query(); rs.OK() {
 
 		var item hapi.ProjProcTraceEntry
 		if err := rs.Decode(&item); err == nil && len(item.GraphOnCPU) > 100 {

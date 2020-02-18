@@ -22,7 +22,6 @@ import (
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/hooto/httpsrv"
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/skv"
 	"github.com/shirou/gopsutil/process"
 
 	"github.com/hooto/htracker/config"
@@ -65,7 +64,7 @@ func (c Proj) ListAction() {
 		closed = c.Params.Get("filter_closed")
 		off    = c.Params.Get("offset")
 		ptype  = "active"
-		pptype = "hit"
+		// pptype = "hit"
 	)
 
 	if limit < 10 {
@@ -76,7 +75,7 @@ func (c Proj) ListAction() {
 
 	if closed == "true" {
 		ptype = "hist"
-		pptype = "exit"
+		// pptype = "exit"
 	}
 
 	if off == "" {
@@ -88,31 +87,35 @@ func (c Proj) ListAction() {
 		cutset = hapi.DataPathProjEntry(ptype, "")
 	)
 
-	rs := data.Data.KvRevScan([]byte(offset), []byte(cutset), limit)
+	rs := data.Data.NewReader(nil).KeyRangeSet(offset, cutset).
+		ModeRevRangeSet(true).LimitNumSet(int64(limit)).Query()
 	if !rs.OK() {
 		return
 	}
 
-	n := rs.KvEach(func(entry *skv.ResultEntry) int {
-		var set hapi.ProjEntry
-		if err := entry.Decode(&set); err == nil {
-			if ptype == "active" && set.Closed > 0 {
-				return 0
-			}
+	for _, v := range rs.Items {
 
-			mkey := hapi.DataPathProjProcEntry(pptype, set.Id, 0, 0)
-			if rs2 := data.Data.KvProgGet(mkey); rs2.OK() {
-				if meta := rs2.Meta(); meta != nil {
-					set.ExpProcNum = int(meta.Num)
-				}
-			}
-			sets.Items = append(sets.Items, &set)
+		var set hapi.ProjEntry
+		if err := v.Decode(&set); err != nil {
+			continue
 		}
-		return 0
-	})
-	if n > 0 {
-		projListCacheNum = n
+
+		if ptype == "active" && set.Closed > 0 {
+			continue
+		}
+
+		/** TODO
+		mkey := hapi.DataPathProjProcEntry(pptype, set.Id, 0, 0)
+		if rs2 := data.Data.NewReader(mkey).Query(); rs2.OK() {
+			if meta := rs2.Meta(); meta != nil {
+				set.ExpProcNum = int(meta.Num)
+			}
+		}
+		*/
+		sets.Items = append(sets.Items, &set)
 	}
+
+	projListCacheNum = len(sets.Items)
 
 	sets.Kind = "ProjList"
 }
@@ -204,11 +207,10 @@ func (c Proj) SetAction() {
 		cutset = hapi.DataPathProjEntry("active", "")
 	)
 
-	if rs := data.Data.KvRevScan([]byte(offset), []byte(cutset), 100); rs.OK() {
+	if rs := data.Data.NewReader(nil).KeyRangeSet(offset, cutset).
+		ModeRevRangeSet(true).LimitNumSet(100).Query(); rs.OK() {
 
-		rss := rs.KvList()
-
-		for _, v := range rss {
+		for _, v := range rs.Items {
 
 			var prev hapi.ProjEntry
 			if err := v.Decode(&prev); err != nil {
@@ -251,7 +253,7 @@ func (c Proj) SetAction() {
 	set.Id = hapi.ObjectId(set.Created, 8)
 	key := hapi.DataPathProjActiveEntry(set.Id)
 
-	if rs := data.Data.KvGet([]byte(key)); rs.OK() {
+	if rs := data.Data.NewReader(key).Query(); rs.OK() {
 		set.Error = types.NewErrorMeta("400", "Tracker already exists")
 		return
 	} else if !rs.NotFound() {
@@ -259,7 +261,7 @@ func (c Proj) SetAction() {
 		return
 	}
 
-	if rs := data.Data.KvPut([]byte(key), set, nil); !rs.OK() {
+	if rs := data.Data.NewWriter(key, set).Commit(); !rs.OK() {
 		set.Error = types.NewErrorMeta("400", "Server Error")
 		return
 	}
@@ -286,7 +288,7 @@ func (c Proj) DelAction() {
 		return
 	}
 
-	if rs := data.Data.KvGet([]byte(key)); rs.NotFound() {
+	if rs := data.Data.NewReader(key).Query(); rs.NotFound() {
 		set.Error = types.NewErrorMeta("400", "No Tracker Found")
 	} else if !rs.OK() {
 		set.Error = types.NewErrorMeta("500", "Server Error")
@@ -298,9 +300,9 @@ func (c Proj) DelAction() {
 			prev.Closed = uint32(time.Now().Unix())
 
 			key_history := hapi.DataPathProjHistoryEntry(id)
-			if rs := data.Data.KvPut([]byte(key_history), prev, nil); !rs.OK() {
+			if rs := data.Data.NewWriter(key_history, prev).Commit(); !rs.OK() {
 				set.Error = types.NewErrorMeta("400", "Server Error")
-			} else if rs := data.Data.KvPut([]byte(key), prev, nil); !rs.OK() {
+			} else if rs := data.Data.NewWriter(key, prev).Commit(); !rs.OK() {
 				set.Error = types.NewErrorMeta("500", "Server Error")
 			} else {
 				set.Kind = "ProjEntry"

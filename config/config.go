@@ -19,16 +19,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hooto/hconf4g/hconf"
 	"github.com/hooto/hflag4g/hflag"
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/lessos/lessgo/encoding/json"
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/connect"
+	"github.com/lynkdb/kvgo"
 )
 
 var (
 	Prefix      = "/opt/hooto/tracker"
-	Version     = "0.1.9"
+	Version     = "0.1.10"
 	Release     = "1"
 	VersionHash = Version // TODO
 	err         error
@@ -36,11 +37,12 @@ var (
 )
 
 type ConfigCommon struct {
-	HttpPort     uint16              `json:"http_port"`
-	HttpBasepath string              `json:"http_basepath,omitempty"`
-	RunMode      string              `json:"run_mode,omitempty"`
-	Auth         string              `json:"auth"`
-	Data         connect.ConnOptions `json:"data"`
+	filepath     string
+	HttpPort     uint16             `json:"http_port" toml:"http_port"`
+	HttpBasepath string             `json:"http_basepath,omitempty" toml:"http_basepath,omitempty"`
+	RunMode      string             `json:"run_mode,omitempty" toml:"run_mode,omitempty"`
+	Auth         string             `json:"auth" toml:"auth"`
+	DataStorage  kvgo.ConfigStorage `json:"data_storage" toml:"data_storage"`
 }
 
 func Setup(version, release string) error {
@@ -78,25 +80,22 @@ func Setup(version, release string) error {
 
 	hlog.Printf("info", "setup prefix %s", Prefix)
 
-	file := Prefix + "/etc/config.json"
-	if err := json.DecodeFile(file, &Config); err != nil {
+	if err := hconf.DecodeFromFile(&Config, Prefix+"/etc/main.conf"); err != nil {
+
 		if !os.IsNotExist(err) {
+			return err
+		}
+
+		//
+		if err := json.DecodeFile(Prefix+"/etc/config.json", &Config); err != nil &&
+			!os.IsNotExist(err) {
 			return err
 		}
 	}
 
-	Config.Data = connect.ConnOptions{
-		Name:      "tracker_db",
-		Connector: "iomix/skv/Connector",
-		Driver:    types.NewNameIdentifier("lynkdb/kvgo"),
-	}
-	data_dir := Prefix + "/var/" + string(Config.Data.Name)
-	Config.Data.SetValue("data_dir", data_dir)
-	hlog.Printf("info", "setup data dir %s", data_dir)
+	Config.filepath = Prefix + "/etc/main.conf"
 
-	if err = os.MkdirAll(data_dir, 0755); err != nil {
-		return err
-	}
+	Config.DataStorage.DataDirectory = Prefix + "/var/db_local"
 
 	if Config.HttpPort < 1 {
 		Config.HttpPort = 9520
@@ -116,5 +115,8 @@ func Setup(version, release string) error {
 }
 
 func Sync() error {
-	return json.EncodeToFile(Config, Prefix+"/etc/config.json", "  ")
+	if Config.filepath != "" {
+		return hconf.EncodeToFile(Config, Config.filepath)
+	}
+	return nil
 }

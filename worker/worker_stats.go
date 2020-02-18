@@ -17,8 +17,6 @@ package worker
 import (
 	"time"
 
-	"github.com/lynkdb/iomix/skv"
-
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
 )
@@ -123,7 +121,7 @@ func projActionStats(proj_id string, entry *hapi.ProjProcEntry) error {
 			v.Time)
 
 		var prev hapi.PbStatsIndexFeed
-		if rs := data.Data.KvProgGet(pk); rs.OK() {
+		if rs := data.Data.NewReader(pk).Query(); rs.OK() {
 			rs.Decode(&prev)
 			if prev.Time < 1 {
 				continue
@@ -138,14 +136,7 @@ func projActionStats(proj_id string, entry *hapi.ProjProcEntry) error {
 		}
 
 		if len(prev.Items) > 0 {
-			data.Data.KvProgPut(
-				pk,
-				skv.NewKvEntry(prev),
-				&skv.KvProgWriteOptions{
-					Expired: hapi.DataExpired(),
-					Actions: skv.KvProgOpFoldMeta,
-				},
-			)
+			data.Data.NewWriter(pk, prev).ExpireSet(hapi.DataExpired).Commit()
 			// hapi.ObjPrint(pk, prev)
 			updated = tn
 		}

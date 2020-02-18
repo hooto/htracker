@@ -21,7 +21,7 @@ import (
 
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/skv"
+	"github.com/lynkdb/iomix/sko"
 
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
@@ -31,7 +31,7 @@ import (
 func Start() error {
 
 	var (
-		offset = hapi.DataPathProjActiveEntry("Z")
+		offset = hapi.DataPathProjActiveEntry("z")
 		cutset = hapi.DataPathProjActiveEntry("")
 		limit  = 100
 		inited = false
@@ -51,12 +51,13 @@ func Start() error {
 
 		sysAction()
 
-		rs := data.Data.KvRevScan([]byte(offset), []byte(cutset), limit)
+		rs := data.Data.NewReader(nil).KeyRangeSet([]byte(offset), []byte(cutset)).
+			ModeRevRangeSet(true).LimitNumSet(int64(limit)).Query()
 		if !rs.OK() {
 			continue
 		}
 
-		rs.KvEach(func(entry *skv.ResultEntry) int {
+		for _, entry := range rs.Items {
 			var set hapi.ProjEntry
 			if err := entry.Decode(&set); err == nil {
 				if err = projAction(set); err != nil {
@@ -66,8 +67,7 @@ func Start() error {
 					// TODO
 				}
 			}
-			return 0
-		})
+		}
 	}
 
 	return nil
@@ -140,11 +140,11 @@ func projAction(item hapi.ProjEntry) error {
 		tn     = uint32(time.Now().Unix())
 	)
 
-	rs := data.Data.KvProgRevScan(offset, cutset, 1000)
+	rs := data.Data.NewReader(nil).KeyRangeSet(offset, cutset).
+		ModeRevRangeSet(true).LimitNumSet(1000).Query()
 	if rs.OK() {
-		rss := rs.KvList()
 		item.ProcNum = 0
-		for _, v := range rss {
+		for _, v := range rs.Items {
 			var set hapi.ProjProcEntry
 			if err := v.Decode(&set); err != nil {
 				continue
@@ -165,7 +165,7 @@ func projAction(item hapi.ProjEntry) error {
 			item.ProcNum += 1
 		}
 		pkey := hapi.DataPathProjActiveEntry(item.Id)
-		data.Data.KvPut([]byte(pkey), item, nil)
+		data.Data.NewWriter([]byte(pkey), item).Commit()
 	}
 
 	hlog.Printf("debug", "proj/action hit %d", len(pids))
@@ -175,14 +175,14 @@ func projAction(item hapi.ProjEntry) error {
 
 func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 
-	var rs skv.Result
-
 	pkey := hapi.DataPathProjProcHitEntry(
 		proj_id, entry.Created, uint32(entry.Pid))
 
+	var rs *sko.ObjectResult
+
 	if entry.Traced < 1 && entry.Exited < 1 {
 
-		rs = data.Data.KvProgGet(pkey)
+		rs = data.Data.NewReader(pkey).Query()
 		if rs.OK() {
 			var prev hapi.ProjProcEntry
 			if err := rs.Decode(&prev); err == nil && prev.Traced > 0 {
@@ -196,14 +196,9 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 			proj_id, entry.Created, uint32(entry.Pid))
 		entry.ProjId = proj_id
 
-		rs = data.Data.KvProgPut(
-			pkeyt,
-			skv.NewKvEntry(entry),
-			&skv.KvProgWriteOptions{
-				Expired: hapi.DataExpired(),
-				Actions: skv.KvProgOpFoldMeta,
-			},
-		)
+		// Actions: skv.KvProgOpFoldMeta,
+		rs = data.Data.NewWriter(pkeyt, entry).ExpireSet(hapi.DataExpired).Commit()
+
 		hlog.Printf("debug", "Project/Process Exit %s, %d", entry.ProjId, entry.Pid)
 		if !rs.OK() {
 			return errors.New("database error")
@@ -211,17 +206,12 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 	}
 
 	if entry.Exited > 0 {
-		rs = data.Data.KvProgDel(pkey, nil)
+		rs = data.Data.NewWriter(pkey, nil).ModeDeleteSet(true).Commit()
 	} else {
 		entry.ProjId = proj_id
-		rs = data.Data.KvProgPut(
-			pkey,
-			skv.NewKvEntry(entry),
-			&skv.KvProgWriteOptions{
-				Expired: hapi.DataExpired(),
-				Actions: skv.KvProgOpFoldMeta,
-			},
-		)
+		rs = data.Data.NewWriter(pkey, entry).ExpireSet(hapi.DataExpired).Commit()
+		// Actions: skv.KvProgOpFoldMeta,
+
 		hlog.Printf("debug", "Project/Process Put %s, %d", entry.ProjId, entry.Pid)
 	}
 
@@ -239,13 +229,12 @@ func projRemove(item hapi.ProjEntry) error {
 		tn     = uint32(time.Now().Unix())
 	)
 
-	rs := data.Data.KvProgRevScan(offset, cutset, 1000)
+	rs := data.Data.NewReader(nil).KeyRangeSet(offset, cutset).
+		ModeRevRangeSet(true).LimitNumSet(1000).Query()
 	if rs.OK() {
 
-		rss := rs.KvList()
-
-		hlog.Printf("warn", "Project/Remove %s, N %d", item.Id, len(rss))
-		for _, vset := range rss {
+		hlog.Printf("warn", "Project/Remove %s, N %d", item.Id, len(rs.Items))
+		for _, vset := range rs.Items {
 
 			var set hapi.ProjProcEntry
 			if err := vset.Decode(&set); err != nil {
@@ -265,14 +254,14 @@ func projRemove(item hapi.ProjEntry) error {
 	)
 
 	if item.Closed > 0 {
-		rs = data.Data.KvDel([]byte(key))
+		rs = data.Data.NewWriter([]byte(key), nil).ModeDeleteSet(true).Commit()
 	} else {
 
 		item.Closed = tn
 
-		rs = data.Data.KvPut([]byte(key_history), item, nil)
+		rs = data.Data.NewWriter([]byte(key_history), item).Commit()
 		if rs.OK() {
-			rs = data.Data.KvDel([]byte(key))
+			rs = data.Data.NewWriter([]byte(key), nil).ModeDeleteSet(true).Commit()
 		}
 	}
 

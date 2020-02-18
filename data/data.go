@@ -15,20 +15,20 @@
 package data
 
 import (
-	"github.com/lynkdb/iomix/skv"
+	"github.com/lynkdb/iomix/sko"
 	"github.com/lynkdb/kvgo"
 
 	"github.com/hooto/htracker/config"
 )
 
 var (
-	Data skv.Connector
+	Data sko.ClientConnector
 	err  error
 )
 
 func Setup() error {
 
-	if Data, err = kvgo.Open(config.Config.Data); err != nil {
+	if Data, err = kvgo.Open(config.Config.DataStorage); err != nil {
 		return err
 	}
 

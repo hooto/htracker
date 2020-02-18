@@ -22,7 +22,7 @@
 </div>
 
 <div class="htracker-body-footer">
-  <span>© 2019 <a href="https://github.com/hooto/htracker" target="_blank">hooto tracker {[=it.version]}</a>
+  <span>© 2020 <a href="https://github.com/hooto/htracker" target="_blank">hooto tracker {[=it.version]}</a>
   &nbsp; is a web visualization and analysis tool for APM (application performance management)</span>
 </div>
 

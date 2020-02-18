@@ -8,4 +8,5 @@ gorun
 webui/htracker/img/
 .build_tempdir/
 deps/bcc
+batch-*
 

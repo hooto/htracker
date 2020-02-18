@@ -16,95 +16,78 @@ package hapi
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/lynkdb/iomix/skv"
 )
 
 const (
-	ttlDays int = 30 // days
+	DataExpired int64 = 30 * 86400 * 1000 // days
 )
 
-func DataExpired() uint64 {
-	return uint64(time.Now().AddDate(0, 0, ttlDays).UnixNano())
+func DataPathProjEntry(ptype, id string) []byte {
+	return []byte(fmt.Sprintf("proj/%s/%s", ptype, id))
 }
 
-func DataPathProjEntry(ptype, id string) string {
-	return fmt.Sprintf("proj/%s/%s", ptype, id)
+func DataPathProjActiveEntry(id string) []byte {
+	return []byte(fmt.Sprintf("proj/active/%s", id))
 }
 
-func DataPathProjActiveEntry(id string) string {
-	return fmt.Sprintf("proj/active/%s", id)
+func DataPathProjHistoryEntry(id string) []byte {
+	return []byte(fmt.Sprintf("proj/hist/%s", id))
 }
 
-func DataPathProjHistoryEntry(id string) string {
-	return fmt.Sprintf("proj/hist/%s", id)
-}
-
-func DataPathUserSessionEntry(id string) skv.KvProgKey {
-	return skv.NewKvProgKey("sess", id)
+func DataPathUserSessionEntry(id string) []byte {
+	return []byte("sess:" + id)
 }
 
 func DataPathProjProcEntry(
 	ptype string,
 	proj_id string,
-	ptime uint32, pid uint32) skv.KvProgKey {
+	ptime uint32, pid uint32) []byte {
 
 	if ptime < 1 {
-		return skv.NewKvProgKey(
-			"proj:p"+ptype,
-			proj_id,
-			"")
+		return []byte("proj:p:" + ptype + ":" + proj_id + ":z")
 	}
 
-	return skv.NewKvProgKey(
-		"proj:p"+ptype,
-		proj_id,
-		Uint32ToHexString(ptime)+Uint32ToHexString(pid))
+	return []byte("proj:p:" + ptype + ":" + proj_id + ":" +
+		Uint32ToHexString(ptime) + Uint32ToHexString(pid))
 }
 
 func DataPathProjProcHitEntry(
 	proj_id string,
-	ptime uint32, pid uint32) skv.KvProgKey {
+	ptime uint32, pid uint32) []byte {
 	return DataPathProjProcEntry("hit", proj_id, ptime, pid)
 }
 
 func DataPathProjProcExitEntry(
 	proj_id string,
-	ptime uint32, pid uint32) skv.KvProgKey {
+	ptime uint32, pid uint32) []byte {
 	return DataPathProjProcEntry("exit", proj_id, ptime, pid)
 }
 
 func DataPathProjProcStatsEntry(
 	ptime uint32, pid uint32,
-	created uint32) skv.KvProgKey {
+	created uint32) []byte {
 
-	return skv.NewKvProgKey(
-		"pstats",
-		Uint32ToHexString(ptime)+Uint32ToHexString(pid),
-		Uint32ToHexString(created))
+	return []byte("pstats:" + Uint32ToHexString(ptime) +
+		":" + Uint32ToHexString(pid) +
+		":" + Uint32ToHexString(created))
 }
 
 func DataPathProjProcTraceEntry(
 	proj_id string,
 	ptime uint32, pid uint32,
-	created uint32) skv.KvProgKey {
+	created uint32) []byte {
 
 	if created < 1 {
-		return skv.NewKvProgKey(
-			"ptrace",
-			proj_id,
-			Uint32ToHexString(ptime)+Uint32ToHexString(pid),
-			"")
+		return []byte("ptrace:" + proj_id +
+			":" + Uint32ToHexString(ptime) + Uint32ToHexString(pid) +
+			":")
 	}
 
-	return skv.NewKvProgKey(
-		"ptrace",
-		proj_id,
-		Uint32ToHexString(ptime)+Uint32ToHexString(pid),
-		Uint32ToHexString(created))
+	return []byte("ptrace:" + proj_id +
+		":" + Uint32ToHexString(ptime) + Uint32ToHexString(pid) +
+		":" + Uint32ToHexString(created))
 }
 
-func DataSysHostStats(timo uint32) skv.KvProgKey {
-	return skv.NewKvProgKey("hoststats", timo)
+func DataSysHostStats(timo uint32) []byte {
+	return []byte("hoststats:" + Uint32ToHexString(timo))
 }

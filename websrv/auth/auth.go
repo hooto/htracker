@@ -21,7 +21,6 @@ import (
 	"github.com/hooto/httpsrv"
 	"github.com/lessos/lessgo/crypto/phash"
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/skv"
 
 	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/data"
@@ -59,7 +58,7 @@ func AuthSessionInstance(s *httpsrv.Session) *AuthSession {
 
 	token := s.Get(AccessTokenKey)
 
-	if rs := data.Data.KvProgGet(hapi.DataPathUserSessionEntry(token)); rs.OK() {
+	if rs := data.Data.NewReader(hapi.DataPathUserSessionEntry(token)).Query(); rs.OK() {
 		var set AuthSession
 		if err := rs.Decode(&set); err == nil && set.AccessToken == token {
 			return &set
@@ -116,7 +115,7 @@ func (c Auth) LoginAction() {
 	} else {
 
 		if !phash.Verify(req.Auth, config.Config.Auth) {
-			set.Error = types.NewErrorMeta("400", "Password")
+			set.Error = types.NewErrorMeta("400", "Invalid Password")
 			return
 		}
 	}
@@ -124,10 +123,8 @@ func (c Auth) LoginAction() {
 	set.User = "admin"
 	set.AccessToken = hapi.ObjectId(uint32(time.Now().Unix()), 16)
 
-	if rs := data.Data.KvProgPut(hapi.DataPathUserSessionEntry(set.AccessToken),
-		skv.NewKvEntry(set), &skv.KvProgWriteOptions{
-			Expired: uint64(time.Now().AddDate(0, 0, 10).UnixNano()),
-		}); !rs.OK() {
+	if rs := data.Data.NewWriter(hapi.DataPathUserSessionEntry(set.AccessToken), set).
+		ExpireSet(86400 * 10 * 1000).Commit(); !rs.OK() {
 		set.Error = types.NewErrorMeta("500", "Server Error (database)")
 		return
 	}

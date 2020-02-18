@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/skv"
 	ps_cpu "github.com/shirou/gopsutil/cpu"
 	ps_disk "github.com/shirou/gopsutil/disk"
 	ps_host "github.com/shirou/gopsutil/host"
@@ -207,7 +206,7 @@ func host_stats_refresh() {
 		pk := hapi.DataSysHostStats(v.Time)
 
 		var stats_index hapi.PbStatsIndexFeed
-		if rs := data.Data.KvProgGet(pk); rs.OK() {
+		if rs := data.Data.NewReader(pk).Query(); rs.OK() {
 			rs.Decode(&stats_index)
 			if stats_index.Time < 1 {
 				continue
@@ -222,13 +221,8 @@ func host_stats_refresh() {
 		}
 
 		if len(stats_index.Items) > 0 {
-			data.Data.KvProgPut(
-				pk,
-				skv.NewKvEntry(stats_index),
-				&skv.KvProgWriteOptions{
-					Expired: hapi.DataExpired(),
-				},
-			)
+			data.Data.NewWriter(pk, stats_index).
+				ExpireSet(hapi.DataExpired).Commit()
 		}
 	}
 }
