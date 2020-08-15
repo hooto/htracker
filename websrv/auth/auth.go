@@ -107,7 +107,7 @@ func (c Auth) LoginAction() {
 
 		config.Config.Auth, _ = phash.Generate(req.Auth)
 
-		if err := config.Sync(); err != nil {
+		if err := config.Flush(); err != nil {
 			set.Error = types.NewErrorMeta("500", "Server Error "+err.Error())
 			return
 		}

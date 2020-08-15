@@ -17,30 +17,32 @@ syntax = "proto3";
 
 package hapi;
 
+option go_package = ".;hapi";
+
 message PbStatsSampleFeed {
 	string                      kind  = 1;
-    uint32                      cycle = 2;
-    repeated PbStatsSampleEntry items = 3;
+	uint32                      cycle = 2;
+	repeated PbStatsSampleEntry items = 3;
 }
 
 message PbStatsSampleEntry {
-    string                      name  = 1;
-    repeated PbStatsSampleValue items = 2;
+	string                      name  = 1;
+	repeated PbStatsSampleValue items = 2;
 }
 
 message PbStatsSampleValue {
-    uint32 time  = 1;
-    int64  value = 2;
+	uint32 time  = 1;
+	int64  value = 2;
 }
 
 message PbStatsIndexList {
-    uint32                    index_cycle  = 1;
-    uint32                    sample_cycle = 2;
-    repeated PbStatsIndexFeed items        = 3;
+	uint32                    index_cycle  = 1;
+	uint32                    sample_cycle = 2;
+	repeated PbStatsIndexFeed items        = 3;
 }
 
 message PbStatsIndexFeed {
-    uint32                      time  = 1;
-    repeated PbStatsSampleEntry items = 2;
+	uint32                      time  = 1;
+	repeated PbStatsSampleEntry items = 2;
 }
 

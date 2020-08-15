@@ -19,25 +19,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hooto/hconf4g/hconf"
 	"github.com/hooto/hflag4g/hflag"
 	"github.com/hooto/hlog4g/hlog"
-	"github.com/lessos/lessgo/encoding/json"
+	"github.com/hooto/htoml4g/htoml"
 	"github.com/lessos/lessgo/types"
 	"github.com/lynkdb/kvgo"
 )
 
 var (
 	Prefix      = "/opt/hooto/tracker"
-	Version     = "0.1.10"
+	Version     = "0.1.11"
 	Release     = "1"
 	VersionHash = Version // TODO
 	err         error
 	Config      ConfigCommon
+	cfgFile     string
 )
 
 type ConfigCommon struct {
-	filepath     string
 	HttpPort     uint16             `json:"http_port" toml:"http_port"`
 	HttpBasepath string             `json:"http_basepath,omitempty" toml:"http_basepath,omitempty"`
 	RunMode      string             `json:"run_mode,omitempty" toml:"run_mode,omitempty"`
@@ -80,20 +79,13 @@ func Setup(version, release string) error {
 
 	hlog.Printf("info", "setup prefix %s", Prefix)
 
-	if err := hconf.DecodeFromFile(&Config, Prefix+"/etc/main.conf"); err != nil {
+	cfgFile = Prefix + "/etc/config.toml"
 
+	if err := htoml.DecodeFromFile(&Config, cfgFile); err != nil {
 		if !os.IsNotExist(err) {
 			return err
 		}
-
-		//
-		if err := json.DecodeFile(Prefix+"/etc/config.json", &Config); err != nil &&
-			!os.IsNotExist(err) {
-			return err
-		}
 	}
-
-	Config.filepath = Prefix + "/etc/main.conf"
 
 	Config.DataStorage.DataDirectory = Prefix + "/var/db_local"
 
@@ -111,12 +103,12 @@ func Setup(version, release string) error {
 		hlog.Printf("info", "setup http_prefix %s", Config.HttpBasepath)
 	}
 
-	return Sync()
+	return Flush()
 }
 
-func Sync() error {
-	if Config.filepath != "" {
-		return hconf.EncodeToFile(Config, Config.filepath)
+func Flush() error {
+	if cfgFile != "" {
+		return htoml.EncodeToFile(Config, cfgFile, nil)
 	}
 	return nil
 }

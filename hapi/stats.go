@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate protoc --proto_path=./ --go_opt=paths=source_relative --go_out=./ --go-grpc_out=./ ./stats.proto
+
 package hapi
 
 import (

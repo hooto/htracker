@@ -3,6 +3,9 @@ CC=go
 CARGS=build
 CFLAGS=""
 
+PROTOC_CMD = protoc
+PROTOC_ARGS = --proto_path=./hapi/ --go_opt=paths=source_relative --go_out=./hapi/ --go-grpc_out=./hapi/ ./hapi/stats.proto
+
 BUILDCOLOR="\033[34;1m"
 BINCOLOR="\033[37;1m"
 ENDCOLOR="\033[0m"
@@ -24,7 +27,8 @@ install: install_init install_bin install_static install_systemd
 	@echo ""
 
 hooto-tracker:
-	$(QUIET_BUILD)$(CC) $(CARGS) -o ./bin/hooto-tracker ./main.go$(CCLINK)
+	$(QUIET_BUILD)$(PROTOC_CMD) $(PROTOC_ARGS) $(CCLINK)
+	$(QUIET_BUILD)$(CC) $(CARGS) -o ./bin/hooto-tracker ./cmd/server/main.go$(CCLINK)
 
 burn:
 	$(QUIET_BUILD)$(CC) $(CARGS) -o ./bin/burn vendor/github.com/spiermar/burn/main.go$(CCLINK)

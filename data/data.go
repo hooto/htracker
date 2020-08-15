@@ -15,14 +15,14 @@
 package data
 
 import (
-	"github.com/lynkdb/iomix/sko"
 	"github.com/lynkdb/kvgo"
+	kv2 "github.com/lynkdb/kvspec/go/kvspec/v2"
 
 	"github.com/hooto/htracker/config"
 )
 
 var (
-	Data sko.ClientConnector
+	Data kv2.Client
 	err  error
 )
 

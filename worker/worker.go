@@ -21,7 +21,7 @@ import (
 
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/lessos/lessgo/types"
-	"github.com/lynkdb/iomix/sko"
+	kv2 "github.com/lynkdb/kvspec/go/kvspec/v2"
 
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
@@ -178,7 +178,7 @@ func projProcEntrySync(proj_id string, entry *hapi.ProjProcEntry) error {
 	pkey := hapi.DataPathProjProcHitEntry(
 		proj_id, entry.Created, uint32(entry.Pid))
 
-	var rs *sko.ObjectResult
+	var rs *kv2.ObjectResult
 
 	if entry.Traced < 1 && entry.Exited < 1 {
 
