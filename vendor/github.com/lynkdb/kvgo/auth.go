@@ -16,64 +16,44 @@ package kvgo
 
 import (
 	"context"
-	"errors"
 
-	"github.com/hooto/iam/iamauth"
+	"github.com/hooto/hauth/go/hauth/v1"
 	"google.golang.org/grpc/credentials"
 )
 
-func authKeyDefault() *iamauth.AuthKey {
-	return &iamauth.AuthKey{
-		AccessKey: "kvgo",
-		User:      "root",
+const (
+	authKeyAccessKeySystem   = "00000000"
+	authKeyAccessKeyClient01 = "00000001"
+)
+
+func authKeyDefault() *hauth.AccessKey {
+	return &hauth.AccessKey{
+		Id:     authKeyAccessKeySystem,
+		Secret: "<empty>",
 	}
 }
 
-func (it *Conn) authKey(ak string) *iamauth.AuthKey {
-	it.keyMu.RLock()
-	defer it.keyMu.RUnlock()
-	k, ok := it.keys[ak]
-	if ok {
-		return k
+func NewSystemAccessKey() *hauth.AccessKey {
+	key := hauth.NewAccessKey()
+	key.Id = authKeyAccessKeySystem
+	key.Roles = []string{"sa"}
+	key.Scopes = []*hauth.ScopeFilter{
+		{
+			Name:  AuthScopeTable,
+			Value: "*",
+		},
 	}
-	return authKeyDefault()
+	return key
 }
 
-func (it *Conn) authKeySet(ak, sk string) error {
-
-	if len(sk) < 20 {
-		return errors.New("invalid secret_key")
-	}
-
-	it.keyMu.Lock()
-	defer it.keyMu.Unlock()
-
-	it.keys[ak] = &iamauth.AuthKey{
-		AccessKey: ak,
-		SecretKey: sk,
-	}
-
-	return nil
+func newAppCredential(key *hauth.AccessKey) credentials.PerRPCCredentials {
+	return hauth.NewGrpcAppCredential(key)
 }
 
-func (it *Conn) authKeySetup(ak *iamauth.AuthKey, secretKey string) error {
-
-	if len(secretKey) < 20 {
-		return errors.New("invalid secret_key")
-	}
-
-	ak.SecretKey = secretKey
-
-	return nil
+func appAuthParse(ctx context.Context, keyMgr *hauth.AccessKeyManager) (*hauth.AppValidator, error) {
+	return hauth.GrpcAppValidator(ctx, keyMgr)
 }
 
-func newAppCredential(key *iamauth.AuthKey) credentials.PerRPCCredentials {
-	return iamauth.NewGrpcAppCredential(key)
-}
-
-func appAuthValid(ctx context.Context, key *iamauth.AuthKey) error {
-	if key == nil {
-		return errors.New("not auth key setup")
-	}
-	return iamauth.GrpcAppCredentialValid(ctx, key)
+func appAuthValid(ctx context.Context, keyMgr *hauth.AccessKeyManager) error {
+	return hauth.GrpcAppCredentialValid(ctx, keyMgr)
 }

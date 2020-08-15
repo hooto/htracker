@@ -5,11 +5,12 @@ An embeddable, persistent and distributed reliable Key-Value database engine.
 ## Features
 
 * support both embedded and server-client running modes.
-* fast and persistent key-value storage engine based on [goleveldb](github.com/syndtr/goleveldb).
+* fast and persistent key-value storage engine based on [goleveldb](https://github.com/syndtr/goleveldb).
 * data is stored sorted by key, forward and backward query is supported over the data.
 * data is automatically compressed using the snappy.
-* support paxos-based distributed deployment and provide service via gRPC
+* support paxos-based distributed deployment and provide service via gRPC.
 * friendly and easy way to run cluster mode in daemon and systemd ([kvgo-server](https://github.com/lynkdb/kvgo-server)).
+* mount a kvgo database as a FUSE filesystem [kvgo-fs-mount](https://github.com/lynkdb/kvgo-fs-mount).
 
 
 ## Getting Started
@@ -57,15 +58,28 @@ package main
 import (
 	"fmt"
 
+	"github.com/hooto/hflag4g/hflag"
 	"github.com/lynkdb/kvgo"
 )
 
 var (
-	addr          = "127.0.0.1:9100"
-	authSecretKey = "9ABtTYi9qN63/8T+n1jtLWllVWoKsJeOAwR7vzZ3ch42MiCw"
+	addr      = "127.0.0.1:9100"
+	accessKey = kvgo.NewSystemAccessKey()
+	Server    *kvgo.Conn
+	tlsCert   *kvgo.ConfigTLSCertificate
+	err       error
 )
 
 func main() {
+
+	if _, ok := hflag.ValueOK("tls_enable"); ok {
+		// openssl genrsa -out server.key 2048
+		// openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650 -subj '/CN=CommonName'
+		tlsCert = &kvgo.ConfigTLSCertificate{
+			ServerKeyFile:  "server.key",
+			ServerCertFile: "server.crt",
+		}
+	}
 
 	if err := startServer(); err != nil {
 		panic(err)
@@ -76,13 +90,13 @@ func main() {
 
 func startServer() error {
 
-	_, err := kvgo.Open(kvgo.ConfigStorage{
+	if Server, err = kvgo.Open(kvgo.ConfigStorage{
 		DataDirectory: "/tmp/kvgo-server",
 	}, kvgo.ConfigServer{
-		Bind:          addr,
-		AuthSecretKey: authSecretKey,
-	})
-	if err != nil {
+		Bind:        addr,
+		AccessKey:   accessKey,
+		AuthTLSCert: tlsCert,
+	}); err != nil {
 		return err
 	}
 
@@ -91,19 +105,18 @@ func startServer() error {
 
 func client() {
 
-	db, err := kvgo.Open(kvgo.ConfigCluster{
-		Masters: []kvgo.ConfigClusterMaster{
-			{
-				Addr:          addr,
-				AuthSecretKey: authSecretKey,
-			},
-		},
-	})
+	clientConfig := kvgo.ClientConfig{
+		Addr:        addr,
+		AccessKey:   accessKey,
+		AuthTLSCert: tlsCert,
+	}
+
+	client, err := clientConfig.NewClient()
 	if err != nil {
 		panic(err)
 	}
 
-	if rs := db.NewWriter([]byte("demo-key"), []byte("demo-value")).Commit(); rs.OK() {
+	if rs := client.NewWriter([]byte("demo-key"), []byte("demo-value")).Commit(); rs.OK() {
 		fmt.Println("OK")
 	} else {
 		fmt.Println("ER", rs.Message)
@@ -123,19 +136,19 @@ import (
 )
 
 var (
-	authSecretKey = "9ABtTYi9qN63/8T+n1jtLWllVWoKsJeOAwR7vzZ3ch42MiCw"
-	masters       = []kvgo.ConfigClusterMaster{
+	accessKey = kvgo.NewSystemAccessKey()
+	mainNodes = []*kvgo.ClientConfig{
 		{
-			Addr:          "127.0.0.1:9101",
-			AuthSecretKey: authSecretKey,
+			Addr:      "127.0.0.1:9101",
+			AccessKey: accessKey,
 		},
 		{
-			Addr:          "127.0.0.1:9102",
-			AuthSecretKey: authSecretKey,
+			Addr:      "127.0.0.1:9102",
+			AccessKey: accessKey,
 		},
 		{
-			Addr:          "127.0.0.1:9103",
-			AuthSecretKey: authSecretKey,
+			Addr:      "127.0.0.1:9103",
+			AccessKey: accessKey,
 		},
 	}
 )
@@ -151,15 +164,15 @@ func main() {
 
 func startCluster() error {
 
-	for i, m := range masters {
+	for i, m := range mainNodes {
 
 		_, err := kvgo.Open(kvgo.ConfigStorage{
 			DataDirectory: fmt.Sprintf("/tmp/kvgo-cluster-%d", i),
 		}, kvgo.ConfigServer{
-			Bind:          m.Addr,
-			AuthSecretKey: authSecretKey,
+			Bind:      m.Addr,
+			AccessKey: accessKey,
 		}, kvgo.ConfigCluster{
-			Masters: masters,
+			MainNodes: mainNodes,
 		})
 		if err != nil {
 			return err
@@ -171,14 +184,17 @@ func startCluster() error {
 
 func client() {
 
-	db, err := kvgo.Open(kvgo.ConfigCluster{
-		Masters: masters,
-	})
+	clientConfig := kvgo.ClientConfig{
+		Addr:      "127.0.0.1:9102",
+		AccessKey: accessKey,
+	}
+
+	client, err := clientConfig.NewClient()
 	if err != nil {
 		panic(err)
 	}
 
-	if rs := db.NewWriter([]byte("demo-key"), []byte("demo-value")).Commit(); rs.OK() {
+	if rs := client.NewWriter([]byte("demo-key"), []byte("demo-value")).Commit(); rs.OK() {
 		fmt.Println("OK")
 	} else {
 		fmt.Println("ER", rs.Message)
@@ -216,7 +232,7 @@ if rs := db.NewWriter(key, val).ExpireSet(3000).Commit(); rs.OK() {
 }
 
 # delete key
-if rs := db.NewWriter(key, nil).ModeDeleteSet(true).Commit(); rs.OK() {
+if rs := db.NewWriter(key).ModeDeleteSet(true).Commit(); rs.OK() {
 	fmt.Println("OK")
 }
 
@@ -262,7 +278,7 @@ if rs := db.NewReader(key).Query(); rs.OK() {
 }
 
 # query multi key-value items from a key-range in forward way
-if rs := db.NewReader(nil).
+if rs := db.NewReader().
 	KeyRangeSet([]byte("00"), []byte("zz")).
 	LimitNumSet(10).Query(); rs.OK() {
 	for i, item := range rs.Items {
@@ -271,7 +287,7 @@ if rs := db.NewReader(nil).
 }
 
 # query multi key-value items from a key-range in backward way
-if rs := db.NewReader(nil).
+if rs := db.NewReader().
 	KeyRangeSet([]byte("zz"), []byte("00")).
 	ModeRevRangeSet(true).
 	LimitNumSet(10).Query(); rs.OK() {
@@ -282,7 +298,7 @@ if rs := db.NewReader(nil).
 
 # query multi key-value items by the paxos-based auto-increment log version.
 lastVersion := uint64(0)
-if rs := db.NewReader(nil).
+if rs := db.NewReader().
 	LogOffsetSet(lastVersion).
 	LimitNumSet(10).Query(); rs.OK() {
 	for i, item := range rs.Items {

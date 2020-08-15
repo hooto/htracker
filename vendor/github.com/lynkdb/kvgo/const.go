@@ -14,8 +14,15 @@
 
 package kvgo
 
+//go:generate protoc --proto_path=./ --go_out=./ --go_opt=paths=source_relative --go-grpc_out=. kvgo.proto
+
+import (
+	"github.com/hooto/hauth/go/hauth/v1"
+	kv2 "github.com/lynkdb/kvspec/go/kvspec/v2"
+)
+
 const (
-	Version = "0.2.0"
+	Version = "0.3.0"
 )
 
 const (
@@ -27,11 +34,16 @@ const (
 )
 
 const (
-	ldbNotFound            = "leveldb: not found"
-	objAcceptTTL           = uint64(3000)
-	workerLocalExpireSleep = 200e6
-	workerLocalExpireLimit = 200
-	workerClusterSleep     = 1e9
+	grpcMsgByteMax = 12 * int(kv2.MiB)
+)
+
+const (
+	ldbNotFound                = "leveldb: not found"
+	objAcceptTTL               = uint64(3000)
+	workerLocalExpireSleep     = 200e6
+	workerLocalExpireLimit     = 200
+	workerReplicaLogAsyncSleep = 1e9
+	workerTableRefreshTime     = int64(600)
 )
 
 var (
@@ -39,10 +51,66 @@ var (
 	keySysLogCutset  = append([]byte{nsKeySys}, []byte("log:cutset")...)
 )
 
-func keySysLogAsync(hostport string) []byte {
-	return append([]byte{nsKeySys}, []byte("log:async:"+hostport)...)
+func keySysLogAsync(hostAddr, tableName string) []byte {
+	if hostAddr == "" {
+		return append([]byte{nsKeySys}, []byte("log:async:")...)
+	}
+	return append([]byte{nsKeySys}, []byte("log:async:"+hostAddr+":"+tableName)...)
 }
 
 func keySysIncrCutset(ns string) []byte {
 	return append([]byte{nsKeySys}, []byte("incr:cutset:"+ns)...)
 }
+
+const (
+	sysTableName   = "sys"
+	sysTableIncrNS = "sys_table_id"
+)
+
+func nsSysTable(name string) []byte {
+	return []byte("sys:table:" + name)
+}
+
+func nsSysTableStatus(name string) []byte {
+	return []byte("sys:table-status:" + name)
+}
+
+func nsSysAuthRole(name string) []byte {
+	return []byte("sys:role:" + name)
+}
+
+func nsSysAccessKey(id string) []byte {
+	return []byte("sys:ak:" + id)
+}
+
+var (
+	authPermSysAll     = "sys/all"
+	authPermTableList  = "table/list"
+	authPermTableRead  = "table/read"
+	authPermTableWrite = "table/write"
+	AuthScopeTable     = "kvgo/table"
+	defaultScopes      = []string{
+		AuthScopeTable,
+	}
+	defaultRoles = []*hauth.Role{
+		{
+			Name:  "sa",
+			Title: "System Administrator",
+			Permissions: []string{
+				authPermSysAll,
+				authPermTableList,
+				authPermTableRead,
+				authPermTableWrite,
+			},
+		},
+		{
+			Name:  "client",
+			Title: "General Client",
+			Permissions: []string{
+				authPermTableList,
+				authPermTableRead,
+				authPermTableWrite,
+			},
+		},
+	}
+)
