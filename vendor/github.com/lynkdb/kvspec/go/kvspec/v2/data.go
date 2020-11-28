@@ -38,7 +38,8 @@ type DataValueCodec interface {
 type dataValueCodecDefault struct{}
 
 var (
-	dataValueCodecStd = &dataValueCodecDefault{}
+	dataValueCodecStd      = &dataValueCodecDefault{}
+	DataValueProtobufCodec = &dataValueProtobufCodec{}
 )
 
 func (it *ObjectData) Valid() error {
@@ -259,4 +260,22 @@ func valueEncodeUint(num uint64) []byte {
 
 func valueEncodeInt(num int64) []byte {
 	return append([]byte{dataValueVersionBytes}, []byte(strconv.FormatInt(num, 10))...)
+}
+
+type dataValueProtobufCodec struct{}
+
+func (it *dataValueProtobufCodec) Encode(object interface{}) ([]byte, error) {
+	obj, ok := object.(proto.Message)
+	if !ok {
+		return nil, errors.New("Invalid Protobuf Value")
+	}
+	return proto.Marshal(obj)
+}
+
+func (it *dataValueProtobufCodec) Decode(value []byte, object interface{}) error {
+	obj, ok := object.(proto.Message)
+	if !ok {
+		return errors.New("Invalid Protobuf Message define")
+	}
+	return proto.Unmarshal(value, obj)
 }

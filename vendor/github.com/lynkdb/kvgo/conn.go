@@ -47,11 +47,18 @@ type dbTableIncrSet struct {
 }
 
 type dbTable struct {
-	instId    string
-	tableId   uint32
-	tableName string
-	db        *leveldb.DB
-	incrSets  map[string]*dbTableIncrSet
+	instId       string
+	tableId      uint32
+	tableName    string
+	db           *leveldb.DB
+	incrMu       sync.RWMutex
+	incrSets     map[string]*dbTableIncrSet
+	logMu        sync.RWMutex
+	logOffset    uint64
+	logCutset    uint64
+	logAsyncMu   sync.Mutex
+	logAsyncSets map[string]bool
+	logLockSets  map[uint64]uint64
 }
 
 type Conn struct {
@@ -61,18 +68,11 @@ type Conn struct {
 	tables               map[string]*dbTable
 	opts                 *Config
 	clients              int
-	logMu                sync.RWMutex
-	logOffset            uint64
-	logCutset            uint64
-	incrMu               sync.RWMutex
-	incrOffset           uint64
-	incrCutset           uint64
 	client               *kv2.PublicClient
 	public               *PublicServiceImpl
 	internal             *InternalServiceImpl
 	keyMgr               *hauth.AccessKeyManager
 	close                bool
-	tableName            string
 	workmu               sync.Mutex
 	workerLocalRunning   bool
 	uptime               int64
@@ -90,15 +90,11 @@ func Open(args ...interface{}) (*Conn, error) {
 
 	var (
 		cn = &Conn{
-			clients:    1,
-			logOffset:  0,
-			logCutset:  0,
-			incrOffset: 0,
-			incrCutset: 0,
-			keyMgr:     hauth.NewAccessKeyManager(),
-			tables:     map[string]*dbTable{},
-			opts:       &Config{},
-			uptime:     time.Now().Unix(),
+			clients: 1,
+			keyMgr:  hauth.NewAccessKeyManager(),
+			tables:  map[string]*dbTable{},
+			opts:    &Config{},
+			uptime:  time.Now().Unix(),
 		}
 	)
 
@@ -267,8 +263,10 @@ func (cn *Conn) dbSetup(dir string, opts *opt.Options) (*dbTable, error) {
 	}
 
 	dt := &dbTable{
-		db:       db,
-		incrSets: map[string]*dbTableIncrSet{},
+		db:           db,
+		incrSets:     map[string]*dbTableIncrSet{},
+		logAsyncSets: map[string]bool{},
+		logLockSets:  map[uint64]uint64{},
 	}
 
 	bs, err := dt.db.Get(keySysInstanceId, nil)
@@ -308,10 +306,12 @@ func (cn *Conn) dbSysSetup() error {
 
 	cn.dbSys = dt.db
 	cn.tables[sysTableName] = &dbTable{
-		tableId:   0,
-		tableName: sysTableName,
-		db:        dt.db,
-		incrSets:  map[string]*dbTableIncrSet{},
+		tableId:      0,
+		tableName:    sysTableName,
+		db:           dt.db,
+		incrSets:     map[string]*dbTableIncrSet{},
+		logAsyncSets: map[string]bool{},
+		logLockSets:  map[uint64]uint64{},
 	}
 
 	if cn.opts.Server.Bind != "" {
@@ -363,9 +363,11 @@ func (cn *Conn) dbTableListSetup() error {
 
 	tables := map[string]*dbTable{
 		"main": {
-			tableId:   10,
-			tableName: "main",
-			incrSets:  map[string]*dbTableIncrSet{},
+			tableId:      10,
+			tableName:    "main",
+			incrSets:     map[string]*dbTableIncrSet{},
+			logAsyncSets: map[string]bool{},
+			logLockSets:  map[uint64]uint64{},
 		},
 	}
 
@@ -449,9 +451,11 @@ func (cn *Conn) dbTableListSetup() error {
 		}
 
 		tables[tb.Name] = &dbTable{
-			tableId:   uint32(item.Meta.IncrId),
-			tableName: tb.Name,
-			incrSets:  map[string]*dbTableIncrSet{},
+			tableId:      uint32(item.Meta.IncrId),
+			tableName:    tb.Name,
+			incrSets:     map[string]*dbTableIncrSet{},
+			logAsyncSets: map[string]bool{},
+			logLockSets:  map[uint64]uint64{},
 		}
 	}
 
@@ -500,10 +504,12 @@ func (cn *Conn) dbTableSetup(tableName string, tableId uint32) error {
 	}
 
 	cn.tables[tableName] = &dbTable{
-		tableId:   tableId,
-		tableName: tableName,
-		incrSets:  map[string]*dbTableIncrSet{},
-		db:        dt.db,
+		tableId:      tableId,
+		tableName:    tableName,
+		incrSets:     map[string]*dbTableIncrSet{},
+		logAsyncSets: map[string]bool{},
+		logLockSets:  map[uint64]uint64{},
+		db:           dt.db,
 	}
 
 	return nil
@@ -558,17 +564,31 @@ func (it *dbTable) Close() error {
 
 	for ns, incrSet := range it.incrSets {
 
-		if incrSet.cutset <= incrSet.offset {
-			continue
+		if incrSet.cutset > incrSet.offset {
+
+			incrSet.cutset = incrSet.offset
+
+			if err := it.db.Put(keySysIncrCutset(ns),
+				[]byte(strconv.FormatUint(incrSet.cutset, 10)), nil); err != nil {
+				hlog.Printf("info", "db error %s", err.Error())
+			} else {
+				hlog.Printf("info", "kvgo table %s, flush incr ns:%s offset %d",
+					it.tableName, ns, incrSet.offset)
+			}
 		}
+	}
 
-		incrSet.cutset = incrSet.offset
+	it.logMu.Lock()
+	defer it.logMu.Unlock()
+	if it.logCutset > it.logOffset {
 
-		if err := it.db.Put(keySysIncrCutset(ns),
-			[]byte(strconv.FormatUint(incrSet.cutset, 10)), nil); err != nil {
+		it.logCutset = it.logOffset
+
+		if err := it.db.Put(keySysLogCutset,
+			[]byte(strconv.FormatUint(it.logCutset, 10)), nil); err != nil {
 			hlog.Printf("info", "db error %s", err.Error())
 		} else {
-			hlog.Printf("info", "db incr set sync offset %d", incrSet.offset)
+			hlog.Printf("info", "kvgo table %s, flush log-id offset %d", it.tableName, it.logCutset)
 		}
 	}
 
@@ -578,18 +598,6 @@ func (it *dbTable) Close() error {
 	return nil
 }
 
-type connTable struct {
-	*Conn
-	tableName string
-}
-
 func (it *Conn) OpenTable(tableName string) kv2.ClientTable {
-	return &connTable{
-		Conn:      it,
-		tableName: tableName,
-	}
-}
-
-func (it *connTable) NewBatch() *kv2.ClientBatch {
-	return kv2.NewClientBatch(it, it.tableName)
+	return kv2.NewClientTable(it, tableName)
 }

@@ -232,16 +232,16 @@
 			"revisionTime": "2020-02-17T14:49:53Z"
 		},
 		{
-			"checksumSHA1": "vEzkuJH24BzKnjfb3HoKUSEJgiY=",
+			"checksumSHA1": "VBMcmZ3VbP4Q7XhjrZreEMzSuU8=",
 			"path": "github.com/lynkdb/kvgo",
-			"revision": "5931073efcde5f2acfd5a2898b7414cbf365dd8b",
-			"revisionTime": "2020-08-15T02:28:33Z"
+			"revision": "c1baed4edce1d4a37f542d08efcd28dc60bbe319",
+			"revisionTime": "2020-10-27T14:16:57Z"
 		},
 		{
-			"checksumSHA1": "RitVdzbQOhZpi72gzYRHbQtPDy4=",
+			"checksumSHA1": "y5vwvUUiEewHz8NrR+xiqmyzffc=",
 			"path": "github.com/lynkdb/kvspec/go/kvspec/v2",
-			"revision": "b407e36ef5d0cad63abde82e8c6fbce66b7df756",
-			"revisionTime": "2020-08-14T13:57:43Z"
+			"revision": "0b9c44bae23d16c05ce33ccd443825f8150ca1f2",
+			"revisionTime": "2020-10-03T03:18:33Z"
 		},
 		{
 			"checksumSHA1": "J4XX2To0Ui7/jtatIa3ZCB3oYJc=",

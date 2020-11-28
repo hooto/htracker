@@ -19,6 +19,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/hooto/hlog4g/hlog"
+
 	kv2 "github.com/lynkdb/kvspec/go/kvspec/v2"
 )
 
@@ -27,21 +29,12 @@ func foFilePathBlock(path string, n uint32) []byte {
 }
 
 type FileObjectConn struct {
-	*Conn
-	tableName string
+	kv2.ClientTable
 }
 
-func NewFileObjectConn(cn *Conn, tableName string) (*FileObjectConn, error) {
-
-	if tableName == "" {
-		tableName = "main"
-	} else if !kv2.TableNameReg.MatchString(tableName) {
-		return nil, errors.New("invalid table name")
-	}
-
+func NewFileObjectConn(c kv2.ClientTable) (*FileObjectConn, error) {
 	return &FileObjectConn{
-		Conn:      cn,
-		tableName: tableName,
+		ClientTable: c,
 	}, nil
 }
 
@@ -51,6 +44,7 @@ func (cn *FileObjectConn) FoFilePut(srcPath, dstPath string) *kv2.ObjectResult {
 	if err != nil {
 		return kv2.NewObjectResultClientError(err)
 	}
+	defer fp.Close()
 
 	st, err := fp.Stat()
 	if err != nil {
@@ -63,8 +57,11 @@ func (cn *FileObjectConn) FoFilePut(srcPath, dstPath string) *kv2.ObjectResult {
 
 	var (
 		block0    = kv2.NewFileObjectBlock(dstPath, st.Size(), 0, nil)
-		blockSize = int64(0)
+		blockSize = block0.BlockSize()
 	)
+	if blockSize == 0 {
+		return kv2.NewObjectResultClientError(errors.New("protocol error"))
+	}
 
 	if ors := cn.NewReader(foFilePathBlock(block0.Path, 0)).Query(); ors.OK() {
 
@@ -79,14 +76,6 @@ func (cn *FileObjectConn) FoFilePut(srcPath, dstPath string) *kv2.ObjectResult {
 		}
 
 		block0.Attrs = prev.Attrs
-	}
-
-	if block0.AttrAllow(kv2.FileObjectBlockAttrBlockSize4) {
-		blockSize = kv2.FileObjectBlockSize4
-	}
-
-	if blockSize == 0 {
-		return kv2.NewObjectResultClientError(errors.New("protocol error"))
 	}
 
 	num := uint32(block0.Size / blockSize)
@@ -116,9 +105,16 @@ func (cn *FileObjectConn) FoFilePut(srcPath, dstPath string) *kv2.ObjectResult {
 				Data:  bs,
 			}
 
-			if rs := cn.NewWriter(foFilePathBlock(block0.Path, n), mpBlock).
-				TableNameSet(cn.tableName).Commit(); !rs.OK() {
+			foPath := foFilePathBlock(block0.Path, n)
+
+			if rs := cn.NewWriter(foPath, mpBlock).
+				Commit(); !rs.OK() {
 				return kv2.NewObjectResultServerError(rs.Error())
+			}
+
+			if n == num {
+				hlog.Printf("info", "kvgo/fo size %d, block %d, path %s",
+					block0.Size, n, foPath)
 			}
 		}
 	}
@@ -128,7 +124,7 @@ func (cn *FileObjectConn) FoFilePut(srcPath, dstPath string) *kv2.ObjectResult {
 
 func (cn *FileObjectConn) FoFileOpen(path string) (io.ReadSeeker, error) {
 
-	rs := cn.NewReader(foFilePathBlock(path, 0)).TableNameSet(cn.tableName).Query()
+	rs := cn.NewReader(foFilePathBlock(kv2.FileObjectPathEncode(path), 0)).Query()
 	if !rs.OK() {
 		return nil, rs.Error()
 	}
@@ -139,15 +135,19 @@ func (cn *FileObjectConn) FoFileOpen(path string) (io.ReadSeeker, error) {
 	}
 
 	return &FoReadSeeker{
-		conn:   cn.Conn,
+		dbt:    cn.ClientTable,
 		block0: block0,
 		path:   path,
 		offset: 0,
 	}, nil
 }
 
+func (cn *FileObjectConn) Close() error {
+	return cn.Close()
+}
+
 type FoReadSeeker struct {
-	conn   *Conn
+	dbt    kv2.ClientTable
 	block0 kv2.FileObjectBlock
 	blockx *kv2.FileObjectBlock
 	path   string
@@ -186,46 +186,43 @@ func (fo *FoReadSeeker) Read(b []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	blockSize := int64(0)
-	if fo.block0.AttrAllow(kv2.FileObjectBlockAttrBlockSize4) {
-		blockSize = kv2.FileObjectBlockSize4
-	}
+	blockSize := fo.block0.BlockSize()
 	if blockSize == 0 {
 		return 0, errors.New("protocol error")
 	}
 
-	blk_num_max := uint32(fo.block0.Size / blockSize)
+	blockNumMax := uint32(fo.block0.Size / blockSize)
 	if (fo.block0.Size % blockSize) > 0 {
-		blk_num_max += 1
+		blockNumMax += 1
 	}
 
 	var (
-		n_done = 0
-		n_len  = len(b)
+		nDone = 0
+		nLen  = len(b)
 	)
 
 	for {
 
 		if fo.offset >= int64(fo.block0.Size) {
-			return n_done, io.EOF
+			return nDone, io.EOF
 		}
 
 		var (
-			blk_num = uint32(fo.offset / blockSize)
-			blk_off = int(fo.offset % blockSize)
+			blockNum    = uint32(fo.offset / blockSize)
+			blockOffset = int(fo.offset % blockSize)
 		)
 
-		if blk_num > blk_num_max {
-			return n_done, io.EOF
+		if blockNum > blockNumMax {
+			return nDone, io.EOF
 		}
 
-		if blk_num == 0 {
+		if blockNum == 0 {
 			fo.blockx = &fo.block0
 		}
 
-		if fo.blockx == nil || fo.blockx.Num != blk_num {
+		if fo.blockx == nil || fo.blockx.Num != blockNum {
 
-			rs := fo.conn.NewReader(foFilePathBlock(fo.path, blk_num)).Query()
+			rs := fo.dbt.NewReader(foFilePathBlock(fo.path, blockNum)).Query()
 			if !rs.OK() {
 				return 0, errors.New("io error : " + rs.Message)
 			}
@@ -242,24 +239,24 @@ func (fo *FoReadSeeker) Read(b []byte) (n int, err error) {
 			fo.blockx = &foBlock
 		}
 
-		blk_off_n := len(fo.blockx.Data) - blk_off
-		if blk_off_n < 1 {
+		blockOffset_n := len(fo.blockx.Data) - blockOffset
+		if blockOffset_n < 1 {
 			return 0, errors.New("io error : offset")
 		}
-		if blk_off_n > n_len {
-			blk_off_n = n_len
+		if blockOffset_n > nLen {
+			blockOffset_n = nLen
 		}
 
-		copy(b[n_done:], fo.blockx.Data[blk_off:(blk_off+blk_off_n)])
+		copy(b[nDone:], fo.blockx.Data[blockOffset:(blockOffset+blockOffset_n)])
 
-		fo.offset += int64(blk_off_n)
-		n_done += blk_off_n
-		n_len -= blk_off_n
+		fo.offset += int64(blockOffset_n)
+		nDone += blockOffset_n
+		nLen -= blockOffset_n
 
-		if n_len < 1 {
+		if nLen < 1 {
 			break
 		}
 	}
 
-	return n_done, nil
+	return nDone, nil
 }

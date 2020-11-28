@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	Version = "0.3.0"
+	Version = "0.3.1"
 )
 
 const (
@@ -42,6 +42,8 @@ const (
 	objAcceptTTL               = uint64(3000)
 	workerLocalExpireSleep     = 200e6
 	workerLocalExpireLimit     = 200
+	workerLogRangeWaitTimeMax  = int64(10e3)
+	workerLogRangeWaitSleep    = int64(200)
 	workerReplicaLogAsyncSleep = 1e9
 	workerTableRefreshTime     = int64(600)
 )

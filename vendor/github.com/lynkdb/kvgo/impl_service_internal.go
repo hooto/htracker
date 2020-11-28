@@ -70,14 +70,14 @@ func (it *InternalServiceImpl) Prepare(ctx context.Context,
 		return nil, errors.New("deny")
 	}
 
-	pLog, err := it.db.objectLogVersionSet(tdb, 1, 0)
+	pLog, err := tdb.objectLogVersionSet(1, 0, tn)
 	if err != nil {
 		return nil, err
 	}
 
 	pInc := or.Meta.IncrId
 	if or.IncrNamespace != "" && or.Meta.IncrId == 0 {
-		pInc, err = it.db.objectIncrSet(tdb, or.IncrNamespace, 1, 0)
+		pInc, err = tdb.objectIncrSet(or.IncrNamespace, 1, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -129,9 +129,9 @@ func (it *InternalServiceImpl) Accept(ctx context.Context,
 		return nil, errors.New("table not found")
 	}
 
-	it.db.objectLogVersionSet(tdb, 0, cLog)
+	tdb.objectLogVersionSet(0, cLog, tn)
 	if rr.IncrNamespace != "" && cInc > 0 {
-		it.db.objectIncrSet(tdb, rr.IncrNamespace, 0, cInc)
+		tdb.objectIncrSet(rr.IncrNamespace, 0, cInc)
 	}
 
 	it.db.mu.Lock()
@@ -206,6 +206,9 @@ func (it *InternalServiceImpl) Accept(ctx context.Context,
 			}
 
 			err = tdb.db.Write(batch, nil)
+			if err == nil {
+				tdb.objectLogFree(cLog)
+			}
 		}
 	}
 

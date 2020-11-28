@@ -212,10 +212,7 @@ func (it *client) NewWriter(key []byte, value interface{}, opts ...interface{}) 
 }
 
 func (it *client) OpenTable(tableName string) ClientTable {
-	return &clientTable{
-		client:    it,
-		tableName: tableName,
-	}
+	return NewClientTable(it, tableName)
 }
 
 func (it *client) SysCmd(req *SysCmdRequest) *ObjectResult {
@@ -234,12 +231,27 @@ func (it *client) Close() error {
 }
 
 type clientTable struct {
-	*client
+	client    Client
 	tableName string
 }
 
+func NewClientTable(c Client, tableName string) ClientTable {
+	return &clientTable{
+		client:    c,
+		tableName: tableName,
+	}
+}
+
+func (it *clientTable) NewReader(keys ...[]byte) *ClientReader {
+	return NewClientReader(it.client.Connector(), keys...).TableNameSet(it.tableName)
+}
+
+func (it *clientTable) NewWriter(key []byte, value interface{}, opts ...interface{}) *ClientWriter {
+	return NewClientWriter(it.client.Connector(), key, value, opts...).TableNameSet(it.tableName)
+}
+
 func (it *clientTable) NewBatch() *ClientBatch {
-	return NewClientBatch(it.client.cc, it.tableName)
+	return NewClientBatch(it.client.Connector(), it.tableName)
 }
 
 func NewSysCmdRequest(method string, msg proto.Message) *SysCmdRequest {

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/hooto/hlog4g/hlog"
@@ -92,6 +91,7 @@ func (cn *Conn) commitLocal(rr *kv2.ObjectWriter, cLog uint64) *kv2.ObjectResult
 
 		if (cLog > 0 && meta.Version == cLog) ||
 			kv2.AttrAllow(rr.Mode, kv2.ObjectWriterModeCreate) ||
+			(rr.Meta.Updated < meta.Updated) ||
 			(rr.Meta.Expired == meta.Expired &&
 				(rr.Meta.IncrId == 0 || rr.Meta.IncrId == meta.IncrId) &&
 				(rr.PrevIncrId == 0 || rr.PrevIncrId == meta.IncrId) &&
@@ -120,23 +120,25 @@ func (cn *Conn) commitLocal(rr *kv2.ObjectWriter, cLog uint64) *kv2.ObjectResult
 		}
 	}
 
+	updated := uint64(time.Now().UnixNano() / 1e6)
+
 	if rr.Meta.Updated < 1 {
-		rr.Meta.Updated = uint64(time.Now().UnixNano() / 1e6)
+		rr.Meta.Updated = updated
 	}
 
 	if rr.Meta.Created < 1 {
-		rr.Meta.Created = rr.Meta.Updated
+		rr.Meta.Created = updated
 	}
 
 	if rr.IncrNamespace != "" {
 
 		if rr.Meta.IncrId == 0 {
-			rr.Meta.IncrId, err = cn.objectIncrSet(tdb, rr.IncrNamespace, 1, 0)
+			rr.Meta.IncrId, err = tdb.objectIncrSet(rr.IncrNamespace, 1, 0)
 			if err != nil {
 				return kv2.NewObjectResultServerError(err)
 			}
 		} else {
-			cn.objectIncrSet(tdb, rr.IncrNamespace, 0, rr.Meta.IncrId)
+			tdb.objectIncrSet(rr.IncrNamespace, 0, rr.Meta.IncrId)
 		}
 	}
 
@@ -146,12 +148,12 @@ func (cn *Conn) commitLocal(rr *kv2.ObjectWriter, cLog uint64) *kv2.ObjectResult
 			cLog = meta.Version
 		}
 
-		cLog, err = cn.objectLogVersionSet(tdb, 1, cLog)
+		cLog, err = tdb.objectLogVersionSet(1, cLog, updated)
 		if err != nil {
 			return kv2.NewObjectResultServerError(err)
 		}
 	} else {
-		_, err = cn.objectLogVersionSet(tdb, 0, cLog)
+		_, err = tdb.objectLogVersionSet(0, cLog, updated)
 		if err != nil {
 			return kv2.NewObjectResultServerError(err)
 		}
@@ -219,6 +221,10 @@ func (cn *Conn) commitLocal(rr *kv2.ObjectWriter, cLog uint64) *kv2.ObjectResult
 			}
 
 			err = tdb.db.Write(batch, nil)
+
+			if err == nil && cLogOn {
+				tdb.objectLogFree(cLog)
+			}
 		}
 	}
 
@@ -532,88 +538,118 @@ func (cn *Conn) objectQueryLogRange(rr *kv2.ObjectReader, rs *kv2.ObjectResult) 
 		limitSize = kv2.ObjectReaderLimitSizeMax
 	}
 
-	var (
-		tto  = uint64(time.Now().UnixNano()/1e6) - 3000
-		iter = tdb.db.NewIterator(&util.Range{
-			Start: offset,
-			Limit: cutset,
-		}, nil)
-	)
+	if rr.WaitTime < 0 {
+		rr.WaitTime = 0
+	} else if rr.WaitTime > workerLogRangeWaitTimeMax {
+		rr.WaitTime = workerLogRangeWaitTimeMax
+	}
 
-	for iter.Next() {
+	for ; rr.WaitTime >= 0; rr.WaitTime -= workerLogRangeWaitSleep {
 
-		if limitNum < 1 {
-			break
-		}
-
-		if bytes.Compare(iter.Key(), offset) <= 0 {
+		if tdb.logOffset <= rr.LogOffset {
+			time.Sleep(time.Duration(workerLogRangeWaitSleep) * time.Millisecond)
 			continue
 		}
 
-		if bytes.Compare(iter.Key(), cutset) >= 0 {
-			break
-		}
+		var (
+			tto  = tdb.objectLogDelay() // uint64(time.Now().UnixNano()/1e6) - 3000
+			iter = tdb.db.NewIterator(&util.Range{
+				Start: offset,
+				Limit: cutset,
+			}, nil)
+		)
 
-		if len(iter.Value()) < 2 {
-			continue
-		}
+		for iter.Next() {
 
-		meta, err := kv2.ObjectMetaDecode(iter.Value())
-		if err != nil || meta == nil {
-			if err != nil {
-				hlog.Printf("debug", "db-log-range err %s", err.Error())
-			}
-			break
-		}
-
-		//
-		if kv2.AttrAllow(meta.Attrs, kv2.ObjectMetaAttrDelete) {
-			rs.Items = append(rs.Items, &kv2.ObjectItem{
-				Meta: meta,
-			})
-		} else {
-
-			var nsKey = nsKeyData
-			if kv2.AttrAllow(meta.Attrs, kv2.ObjectMetaAttrDataOff) {
-				nsKey = nsKeyMeta
+			if limitNum < 1 {
+				break
 			}
 
-			bs, err := tdb.db.Get(keyEncode(nsKey, meta.Key), nil)
+			if bytes.Compare(iter.Key(), offset) <= 0 {
+				continue
+			}
 
-			if err != nil && err.Error() == ldbNotFound {
-				if nsKey == nsKeyData {
-					nsKey = nsKeyMeta
-				} else {
-					nsKey = nsKeyData
+			if bytes.Compare(iter.Key(), cutset) >= 0 {
+				break
+			}
+
+			if len(iter.Value()) < 2 {
+				continue
+			}
+
+			meta, err := kv2.ObjectMetaDecode(iter.Value())
+			if err != nil || meta == nil {
+				if err != nil {
+					hlog.Printf("info", "db-log-range err %s", err.Error())
 				}
-				bs, err = tdb.db.Get(keyEncode(nsKey, meta.Key), nil)
-			}
-
-			if err != nil {
-				hlog.Printf("debug", "db-log-range err %s", err.Error())
 				break
 			}
 
-			limitSize -= int64(len(bs))
-			if limitSize < 1 {
-				break
-			}
+			//
+			if kv2.AttrAllow(meta.Attrs, kv2.ObjectMetaAttrDelete) {
+				rs.Items = append(rs.Items, &kv2.ObjectItem{
+					Meta: meta,
+				})
+			} else {
 
-			if item, err := kv2.ObjectItemDecode(bs); err == nil {
+				var nsKey = nsKeyData
+				if kv2.AttrAllow(meta.Attrs, kv2.ObjectMetaAttrDataOff) {
+					nsKey = nsKeyMeta
+				}
+
+				bs, err := tdb.db.Get(keyEncode(nsKey, meta.Key), nil)
+
+				if err != nil && err.Error() == ldbNotFound {
+					if nsKey == nsKeyData {
+						nsKey = nsKeyMeta
+					} else {
+						nsKey = nsKeyData
+					}
+					bs, err = tdb.db.Get(keyEncode(nsKey, meta.Key), nil)
+				}
+
+				if err != nil {
+					hlog.Printf("info", "db-log-range err %s", err.Error())
+					continue
+				}
+
+				item, err := kv2.ObjectItemDecode(bs)
+				if err != nil {
+					continue
+				}
+
+				if item.Meta.Version != meta.Version {
+					continue
+				}
+
 				if item.Meta.Updated >= tto {
 					break
 				}
+
+				limitSize -= int64(len(bs))
+				if limitSize < 1 {
+					break
+				}
+
 				rs.Items = append(rs.Items, item)
 			}
+
+			limitNum -= 1
 		}
 
-		limitNum -= 1
-	}
+		iter.Release()
 
-	iter.Release()
+		if iter.Error() != nil {
+			return iter.Error()
+		}
 
-	if iter.Error() != nil {
-		return iter.Error()
+		if len(rs.Items) > 0 || rr.WaitTime < 0 {
+			break
+		}
+
+		if rr.WaitTime >= workerLogRangeWaitSleep {
+			time.Sleep(time.Duration(workerLogRangeWaitSleep) * time.Millisecond)
+		}
 	}
 
 	if limitNum < 1 || limitSize < 1 {
@@ -663,125 +699,6 @@ func (cn *Conn) objectMetaGet(rr *kv2.ObjectWriter) (*kv2.ObjectMeta, error) {
 	}
 
 	return nil, err
-}
-
-func (cn *Conn) objectLogVersionSet(tdb *dbTable, incr, set uint64) (uint64, error) {
-
-	cn.logMu.Lock()
-	defer cn.logMu.Unlock()
-
-	if incr == 0 && set == 0 {
-		return cn.logOffset, nil
-	}
-
-	if cn.logCutset <= 100 {
-
-		if bs, err := tdb.db.Get(keySysLogCutset, nil); err != nil {
-			if err.Error() != ldbNotFound {
-				return 0, err
-			}
-		} else {
-			if cn.logCutset, err = strconv.ParseUint(string(bs), 10, 64); err != nil {
-				return 0, err
-			}
-			if cn.logOffset < cn.logCutset {
-				cn.logOffset = cn.logCutset
-			}
-		}
-	}
-
-	if cn.logOffset < 100 {
-		cn.logOffset = 100
-	}
-
-	if set > 0 && set > cn.logOffset {
-		incr += (set - cn.logOffset)
-	}
-
-	if incr > 0 {
-
-		if (cn.logOffset + incr) >= cn.logCutset {
-
-			cutset := cn.logOffset + incr + 100
-
-			if n := cutset % 100; n > 0 {
-				cutset += n
-			}
-
-			if err := tdb.db.Put(keySysLogCutset,
-				[]byte(strconv.FormatUint(cutset, 10)), nil); err != nil {
-				return 0, err
-			}
-
-			cn.logCutset = cutset
-		}
-
-		cn.logOffset += incr
-	}
-
-	return cn.logOffset, nil
-}
-
-func (cn *Conn) objectIncrSet(tdb *dbTable, ns string, incr, set uint64) (uint64, error) {
-
-	cn.incrMu.Lock()
-	defer cn.incrMu.Unlock()
-
-	incrSet := tdb.incrSets[ns]
-	if incrSet == nil {
-		incrSet = &dbTableIncrSet{
-			offset: 0,
-			cutset: 0,
-		}
-		tdb.incrSets[ns] = incrSet
-	}
-
-	if incr == 0 && set == 0 {
-		return incrSet.offset, nil
-	}
-
-	if incrSet.cutset <= 100 {
-
-		if bs, err := tdb.db.Get(keySysIncrCutset(ns), nil); err != nil {
-			if err.Error() != ldbNotFound {
-				return 0, err
-			}
-		} else {
-			if incrSet.cutset, err = strconv.ParseUint(string(bs), 10, 64); err != nil {
-				return 0, err
-			}
-			if incrSet.offset < incrSet.cutset {
-				incrSet.offset = incrSet.cutset
-			}
-		}
-	}
-
-	if incrSet.offset < 100 {
-		incrSet.offset = 100
-	}
-
-	if set > 0 && set > incrSet.offset {
-		incr += (set - incrSet.offset)
-	}
-
-	if incr > 0 {
-
-		if (incrSet.offset + incr) >= incrSet.cutset {
-
-			cutset := incrSet.offset + incr + 100
-
-			if err := tdb.db.Put(keySysIncrCutset(ns),
-				[]byte(strconv.FormatUint(cutset, 10)), nil); err != nil {
-				return 0, err
-			}
-
-			incrSet.cutset = cutset
-		}
-
-		incrSet.offset += incr
-	}
-
-	return incrSet.offset, nil
 }
 
 func (it *Conn) Connector() kv2.ClientConnector {

@@ -132,6 +132,7 @@ func (it *PublicServiceImpl) Commit(ctx context.Context,
 		}
 
 		if kv2.AttrAllow(rr.Mode, kv2.ObjectWriterModeCreate) ||
+			(rr.Meta.Updated < meta.Updated) ||
 			(rr.Meta.Expired == meta.Expired &&
 				(rr.Meta.IncrId == 0 || rr.Meta.IncrId == meta.IncrId) &&
 				(rr.PrevIncrId == 0 || rr.PrevIncrId == meta.IncrId) &&
