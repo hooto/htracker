@@ -22,51 +22,77 @@ import (
 	"github.com/hooto/hlog4g/hlog"
 	"github.com/lessos/lessgo/types"
 	kv2 "github.com/lynkdb/kvspec/go/kvspec/v2"
+	injob "github.com/sysinner/injob/v1"
 
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
 	"github.com/hooto/htracker/status"
 )
 
-func Start() error {
+var (
+	jobDaemon *injob.Daemon
+)
 
-	var (
-		offset = hapi.DataPathProjActiveEntry("z")
-		cutset = hapi.DataPathProjActiveEntry("")
-		limit  = 100
-		inited = false
-	)
+func Setup() error {
 
-	for {
-		if inited {
-			time.Sleep(3e9)
-		} else {
-			inited = true
-		}
+	jobDaemon, _ = injob.NewDaemon()
 
-		if err := status.ProcListRefresh(); err != nil {
-			hlog.Printf("warn", "proj/proc/refresh err %s", err.Error())
+	jobDaemon.Commit(NewSysWorker())
+
+	go jobDaemon.Start()
+
+	return nil
+}
+
+func NewSysWorker() *injob.JobEntry {
+	return injob.NewJobEntry(&SysWorker{},
+		injob.NewSchedule().EveryTimeCycle(injob.Second, 3))
+}
+
+type SysWorker struct {
+	spec *injob.JobSpec
+}
+
+func (it *SysWorker) Spec() *injob.JobSpec {
+	if it.spec == nil {
+		it.spec = injob.NewJobSpec("htracker/sys-job")
+	}
+	return it.spec
+}
+
+func (it *SysWorker) Status() *injob.Status {
+	return nil
+}
+
+var (
+	offset = hapi.DataPathProjActiveEntry("z")
+	cutset = hapi.DataPathProjActiveEntry("")
+	limit  = 100
+)
+
+func (it *SysWorker) Run(ctx *injob.Context) error {
+
+	if err := status.ProcListRefresh(); err != nil {
+		return err
+	}
+
+	sysRefresh()
+
+	rs := data.Data.NewReader(nil).
+		KeyRangeSet([]byte(offset), []byte(cutset)).
+		ModeRevRangeSet(true).LimitNumSet(int64(limit)).Query()
+	if !rs.OK() {
+		return errors.New("db err " + rs.Message)
+	}
+
+	for _, entry := range rs.Items {
+		var item hapi.ProjEntry
+		if err := entry.Decode(&item); err != nil {
 			continue
 		}
-
-		sysAction()
-
-		rs := data.Data.NewReader(nil).KeyRangeSet([]byte(offset), []byte(cutset)).
-			ModeRevRangeSet(true).LimitNumSet(int64(limit)).Query()
-		if !rs.OK() {
-			continue
-		}
-
-		for _, entry := range rs.Items {
-			var set hapi.ProjEntry
-			if err := entry.Decode(&set); err == nil {
-				if err = projAction(set); err != nil {
-					hlog.Printf("error", "proj/action %s, err %s",
-						set.Id, err.Error())
-				} else {
-					// TODO
-				}
-			}
+		if err := projAction(item); err != nil {
+			hlog.Printf("warn", "proj/action %s, err %s",
+				item.Id, err.Error())
 		}
 	}
 

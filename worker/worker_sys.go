@@ -50,7 +50,7 @@ var (
 	sync_vols_last int64 = 0
 )
 
-func sysAction() {
+func sysRefresh() {
 
 	if status.Host.Spec.Platform == nil {
 
@@ -100,7 +100,8 @@ func sysAction() {
 
 			if !strings.HasPrefix(dev.Device, "/dev/") ||
 				strings.HasPrefix(dev.Mountpoint, "/boot") ||
-				strings.Contains(dev.Mountpoint, "/devicemapper/mnt/") {
+				strings.Contains(dev.Mountpoint, "/devicemapper/mnt/") ||
+				strings.HasPrefix(dev.Mountpoint, "/snap") {
 				continue
 			}
 

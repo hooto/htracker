@@ -472,6 +472,12 @@
 			"revisionTime": "2018-10-28T04:15:37Z"
 		},
 		{
+			"checksumSHA1": "a5MJMI3b/lDK1LLm8oqB+GHGiVU=",
+			"path": "github.com/sysinner/injob/v1",
+			"revision": "8ec7b4d6b73deac44943972217fb20873972a7ef",
+			"revisionTime": "2020-11-21T12:45:23Z"
+		},
+		{
 			"checksumSHA1": "pCY4YtdNKVBYRbNvODjx8hj0hIs=",
 			"path": "golang.org/x/net/http/httpguts",
 			"revision": "a882066a44e04a21d46e51451c71e131344e830e",

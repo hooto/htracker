@@ -28,7 +28,7 @@ import (
 
 var (
 	Prefix      = "/opt/hooto/tracker"
-	Version     = "0.1.11"
+	Version     = "0.1.12"
 	Release     = "1"
 	VersionHash = Version // TODO
 	err         error

@@ -28,7 +28,7 @@ import (
 	"github.com/hooto/htracker/config"
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/websrv/frontend"
-	"github.com/hooto/htracker/websrv/v1"
+	v1 "github.com/hooto/htracker/websrv/v1"
 	"github.com/hooto/htracker/worker"
 )
 
@@ -59,7 +59,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	go worker.Start()
+	if err := worker.Setup(); err != nil {
+		hlog.Printf("fatal", "worker/Setup %s", err.Error())
+		fmt.Println("Fatal worker/Setup :", err)
+		os.Exit(1)
+	}
 
 	var (
 		quit = make(chan os.Signal, 2)
