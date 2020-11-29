@@ -12,6 +12,7 @@ Source0:   %{name}-__version__.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 
 Requires:       redhat-lsb-core
+Requires:       perl
 Requires(pre):  perf
 
 %description
