@@ -112,7 +112,7 @@ const (
 	ProjTraceTimeIntervalMin uint32 = 1
 	ProjTraceTimeIntervalDef uint32 = 1200
 	ProjTraceTimeIntervalMax uint32 = 86400
-	ProjTraceTimeDurationMin uint32 = 60
+	ProjTraceTimeDurationMin uint32 = 20
 	ProjTraceTimeDurationDef uint32 = 120
 	ProjTraceTimeDurationMax uint32 = 600
 	ProjTraceLoadCpuMin      uint32 = 1

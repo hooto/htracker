@@ -39,7 +39,7 @@ sudo yum install -y perf golang
 
 
 # Ubuntu 18.04
-sudo apt install linux-tools-commom linux-tools-generic golang
+sudo apt install linux-tools-common linux-tools-generic golang
 ```
 
 ### step 2: download source code, build, install and start the server

@@ -559,7 +559,7 @@ htrackerProj.ItemNewOptPlanTimerNext = function() {
         elem = $("#htracker_projset_plan_time_duration");
         if (elem && elem.val().length > 0) {
             var t = parseInt(elem.val());
-            if (t < 60 || t > 600) {
+            if (t < 10 || t > 600) {
                 throw l4i.T("Invalid %s", l4i.T("Time of duration"));
             }
             htrackerProj.itemNewAct.trace_options.fix_timer.duration = t;
@@ -624,7 +624,7 @@ htrackerProj.ItemNewOptPlanOverloadNext = function() {
         elem = $("#htracker_projset_plan_time_duration");
         if (elem && elem.val().length > 0) {
             var t = parseInt(elem.val());
-            if (t < 60 || t > 600) {
+            if (t < 10 || t > 600) {
                 throw l4i.T("Invalid %s", l4i.T("Time of duration"));
             }
             htrackerProj.itemNewAct.trace_options.overload.duration = t;

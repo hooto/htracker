@@ -16,11 +16,13 @@ package v1
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/lessos/lessgo/encoding/json"
 	"github.com/lessos/lessgo/types"
+	psnet "github.com/shirou/gopsutil/net"
 
 	"github.com/hooto/htracker/data"
 	"github.com/hooto/htracker/hapi"
@@ -205,6 +207,37 @@ func (c Proj) ProcStatsAction() {
 	feed.Kind = "StatsFeed"
 	c.RenderJson(feed)
 
+}
+
+func (c Proj) ProcStatsConnectionsAction() {
+
+	type rspEntry struct {
+		types.TypeMeta
+		Stats       map[string]int
+		Connections []psnet.ConnectionStat
+	}
+
+	var (
+		proj_id = c.Params.Get("proj_id")
+		proc_id = int32(c.Params.Int64("proc_id"))
+		set     = rspEntry{
+			Stats: map[string]int{},
+		}
+	)
+	defer c.RenderJson(&set)
+
+	proc := status.ProcList.Entry(proc_id, 0)
+	if proc == nil || proc.ProjId != proj_id {
+		set.Error = types.NewErrorMeta("400", "Process Not Found")
+		return
+	} else {
+		set.Connections, _ = proc.Process.Connections()
+		for _, v := range set.Connections {
+			set.Stats[fmt.Sprintf("%s:%d.%s", v.Raddr.IP, v.Raddr.Port, v.Status)]++
+		}
+	}
+
+	set.Kind = "ProcStatsConnections"
 }
 
 func (c Proj) ProcTraceListAction() {
