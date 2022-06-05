@@ -263,8 +263,8 @@ func (c Proj) ProcTraceListAction() {
 
 	if limit < 1 {
 		limit = 1
-	} else if limit > 100 {
-		limit = 100
+	} else if limit > 1000 {
+		limit = 1000
 	}
 
 	if offset > 0 {
@@ -295,7 +295,7 @@ func (c Proj) ProcTraceListAction() {
 			proc_time,
 			proc_id,
 			cutset,
-		)).ModeRevRangeSet(true).LimitNumSet(int64(0)).Query(); rs.OK() {
+		)).ModeRevRangeSet(true).LimitNumSet(int64(limit) + 1).Query(); rs.OK() {
 
 		for _, v := range rs.Items {
 			var item hapi.ProjProcTraceEntry
@@ -321,11 +321,11 @@ func (c Proj) ProcTraceListAction() {
 			}
 		}
 
-		if len(rs.Items) >= limit {
+		if len(rs.Items) > limit {
 			mkey := hapi.DataPathProjProcTraceEntry(
 				proj_id, proc_time, proc_id, 0)
 			if rs2 := data.Data.NewReader(nil).KeyRangeSet(mkey, mkey).
-				LimitNumSet(1000).Query(); rs2.OK() {
+				LimitNumSet(int64(limit) * 2).Query(); rs2.OK() {
 				sets.Total = int64(len(rs2.Items)) // TOPO
 			}
 		}

@@ -36,7 +36,7 @@ type Proj struct {
 
 var (
 	projListCacheNum = 0
-	procNameReg      = regexp.MustCompile("^[a-zA-Z0-9-_]{1,50}$")
+	procNameReg      = regexp.MustCompile("^[a-zA-Z0-9\\.\\-\\_]{1,50}$")
 )
 
 func (c *Proj) Init() int {
@@ -79,7 +79,7 @@ func (c Proj) ListAction() {
 	}
 
 	if off == "" {
-		off = "Z"
+		off = "zzzz"
 	}
 
 	var (
@@ -204,11 +204,11 @@ func (c Proj) SetAction() {
 
 	var (
 		offset = hapi.DataPathProjEntry("active", "")
-		cutset = hapi.DataPathProjEntry("active", "")
+		cutset = hapi.DataPathProjEntry("active", "zzzz")
 	)
 
 	if rs := data.Data.NewReader(nil).KeyRangeSet(offset, cutset).
-		ModeRevRangeSet(true).LimitNumSet(100).Query(); rs.OK() {
+		ModeRevRangeSet(true).LimitNumSet(1000).Query(); rs.OK() {
 
 		for _, v := range rs.Items {
 

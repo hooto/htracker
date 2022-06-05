@@ -34,7 +34,7 @@ var htrackerProj = {
     listAutoRefreshTimer: null,
     procListMenuActive: null,
     procTraceListOffset: 0,
-    procTraceListLimit: 50,
+    procTraceListLimit: 1000,
 }
 
 htrackerProj.listMenus = function() {
